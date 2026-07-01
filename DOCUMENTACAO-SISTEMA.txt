@@ -287,3 +287,28 @@ FALTA (parte do usuário, precisa das contas dele):
 1) criar repo no GitHub e `git push`; 2) Render -> New Blueprint -> escolher o
    repo -> Apply. Depois: site em https://alpha-hub-web.onrender.com.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-01 — Sessão 8: NO AR (deploy concluído no Render)
+------------------------------------------------------------------
+
+PUBLICADO com sucesso:
+- Repositório: https://github.com/AlphaControlPE/alpha-hub (push feito pelo usuário).
+- Render Blueprint aplicado: banco + API + Web criados a partir do render.yaml.
+
+URLS PÚBLICAS (LIVE):
+- Site: https://alpha-hub-web.onrender.com
+- API:  https://alpha-hub-api.onrender.com/api  (health OK)
+
+VERIFICAÇÃO EM PRODUÇÃO (via curl):
+- GET /api/planos -> catálogo (Comunidade/Verificado Pro/...) => migração + seed OK no Postgres da nuvem.
+- POST /api/auth/login (admin@alphahub.dev) -> JWT OK => auth + usuários do seed OK.
+- GET /api/solicitacoes -> dados retornando => banco populado.
+- Web respondeu HTTP 200.
+
+OBSERVAÇÕES:
+- Plano grátis do Render: serviços "dormem" após ~15 min sem uso; 1º acesso depois
+  demora ~30-60s pra acordar (visto na prática: API respondeu 000 e depois 200).
+- Postgres grátis do Render expira com o tempo (migrar p/ plano pago quando for pra valer).
+- Pagamentos seguem SIMULADOS (sem dinheiro real) até integrar parceiro.
+==================================================================
