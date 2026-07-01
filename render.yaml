@@ -1,0 +1,47 @@
+# Blueprint do Render — sobe site + API + banco a partir deste repositório.
+# Passo a passo humano em DEPLOY.md.
+#
+# IMPORTANTE: os nomes "alpha-hub-api" e "alpha-hub-web" viram a URL pública
+# (https://<nome>.onrender.com). Se algum nome já estiver em uso, o Render pede
+# outro — e aí você troca também os dois valores de URL (WEB_ORIGIN e
+# NEXT_PUBLIC_API_URL) abaixo para baterem.
+
+databases:
+  - name: alpha-hub-db
+    databaseName: alphahub
+    user: alphahub
+    plan: free
+
+services:
+  # ---------- API (NestJS) ----------
+  - type: web
+    name: alpha-hub-api
+    runtime: node
+    rootDir: apps/api
+    plan: free
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && (npx prisma db seed || true) && node dist/main.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alpha-hub-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: WEB_ORIGIN
+        value: https://alpha-hub-web.onrender.com
+
+  # ---------- Web (Next.js) ----------
+  - type: web
+    name: alpha-hub-web
+    runtime: node
+    rootDir: apps/web
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npx next start -p $PORT
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://alpha-hub-api.onrender.com

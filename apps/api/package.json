@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Alpha Hub — API (monólito modular, API-first, auditável)",
   "private": true,
+  "engines": { "node": ">=20" },
   "scripts": {
     "build": "nest build",
     "start": "nest start",
