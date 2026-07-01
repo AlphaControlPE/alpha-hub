@@ -312,3 +312,34 @@ OBSERVAÇÕES:
 - Postgres grátis do Render expira com o tempo (migrar p/ plano pago quando for pra valer).
 - Pagamentos seguem SIMULADOS (sem dinheiro real) até integrar parceiro.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-01 — Sessão 9: Parte IV — Perfis públicos & Portfólio (agente + revisão)
+------------------------------------------------------------------
+
+PROCESSO (a pedido do usuário): "cada agente para uma etapa, depois revise".
+Agente 1 implementou o backend (módulo perfil, schema, app.module, tipos web) e
+foi interrompido por limite de sessão; o main REVISOU (aprovado: padrões de
+auditoria/guards/validação corretos) e COMPLETOU frontend, links e teste e2e.
+
+BACKEND (módulo "perfil"):
+- Models: PortfolioItem (titulo, descricao, imagemUrl?, link?) e ServicoOferecido
+  (titulo, descricao, precoBase? centavos), ambos por usuário, cascade delete.
+- Endpoints: GET /usuarios/:id/perfil (público: bio, selo, portfólio, serviços;
+  sem vazar email/senha), GET /perfil/me, POST/DELETE /perfil/portfolio[/:id],
+  POST/DELETE /perfil/servicos[/:id] (só dono; auditado).
+
+FRONTEND:
+- /usuarios/[id]: perfil público com avatar, selo "✓ verificado", bio, reputação
+  multidimensional em barras (reusa GET /usuarios/:id/reputacao da Parte X),
+  portfólio e serviços (preço "a partir de"/"a combinar").
+- /perfil: edição (adicionar/remover casos e serviços) + link p/ perfil público.
+- Links: avatar do menu -> /perfil; nome do prestador na proposta e autor da
+  solicitação -> /usuarios/{id}.
+
+BANCO: migração 20260701204010_parte_iv_perfil aplicada.
+
+VERIFICAÇÃO: build API + typecheck web OK; e2e 52/52 PASSARAM (7 suítes; novo
+perfil.e2e-spec com 7 testes: perfil público sem auth e sem vazar dados, dono
+edita, terceiro não remove=403, validação=400).
+==================================================================

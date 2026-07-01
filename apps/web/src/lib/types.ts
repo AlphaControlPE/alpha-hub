@@ -46,6 +46,34 @@ export interface Reputacao {
   }[];
 }
 
+// Perfil / portfólios (Parte IV)
+export interface PortfolioItem {
+  id: string;
+  titulo: string;
+  descricao: string;
+  imagemUrl: string | null;
+  link: string | null;
+  criadoEm: string;
+}
+
+export interface ServicoOferecido {
+  id: string;
+  titulo: string;
+  descricao: string;
+  precoBase: number | null;
+  criadoEm: string;
+}
+
+export interface PerfilPublico {
+  id: string;
+  nome: string;
+  bio: string | null;
+  verificado: boolean;
+  criadoEm: string;
+  portfolio: PortfolioItem[];
+  servicos: ServicoOferecido[];
+}
+
 export interface Denuncia {
   id: string;
   alvoTipo: string;

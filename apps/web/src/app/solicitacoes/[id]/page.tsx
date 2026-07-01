@@ -100,7 +100,9 @@ export default function DetalheSolicitacao() {
         <div className="row" style={{ margin: '10px 0 14px', flexWrap: 'wrap' }}>
           <span className="chip">{sol.categoria}</span>
           <span className="chip">orçamento {centavosParaReal(sol.orcamento)}</span>
-          <span className="chip">por {sol.autor.nome}</span>
+          <Link href={`/usuarios/${sol.autor.id}`} className="chip" title="Ver perfil público">
+            por {sol.autor.nome} ↗
+          </Link>
         </div>
         <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{sol.descricao}</p>
         {usuario && !ehAutor && (
@@ -152,7 +154,9 @@ export default function DetalheSolicitacao() {
                 <div className="row">
                   <span className="avatar">{p.autor.nome.charAt(0).toUpperCase()}</span>
                   <div>
-                    <strong>{p.autor.nome}</strong>
+                    <Link href={`/usuarios/${p.autor.id}`} title="Ver perfil público">
+                      <strong style={{ borderBottom: '1px dotted var(--text-dim)' }}>{p.autor.nome}</strong>
+                    </Link>
                     <div className="muted" style={{ fontSize: 12 }}>
                       {centavosParaReal(p.valor)} · {p.prazoDias ? `${p.prazoDias} dias` : 'prazo a combinar'}
                     </div>

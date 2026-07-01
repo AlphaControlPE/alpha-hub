@@ -30,9 +30,11 @@ export function Nav() {
             <Link href="/nova" className="btn btn-primary btn-sm">+ Nova solicitação</Link>
             <NotificationBell />
             <span className="row" style={{ marginLeft: 6 }}>
-              <span className="avatar" style={{ width: 30, height: 30 }}>
-                {usuario.nome.charAt(0).toUpperCase()}
-              </span>
+              <Link href="/perfil" title="Meu perfil">
+                <span className="avatar" style={{ width: 30, height: 30 }}>
+                  {usuario.nome.charAt(0).toUpperCase()}
+                </span>
+              </Link>
               <button className="btn btn-ghost btn-sm" onClick={sair}>Sair</button>
             </span>
           </>

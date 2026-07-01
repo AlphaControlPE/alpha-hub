@@ -13,6 +13,7 @@ import { ModeracaoModule } from './modules/moderacao/moderacao.module';
 import { MonetizacaoModule } from './modules/monetizacao/monetizacao.module';
 import { NegociosModule } from './modules/negocios/negocios.module';
 import { NotificacoesModule } from './modules/notificacoes/notificacoes.module';
+import { PerfilModule } from './modules/perfil/perfil.module';
 import { ReputacaoModule } from './modules/reputacao/reputacao.module';
 
 @Module({
@@ -31,6 +32,7 @@ import { ReputacaoModule } from './modules/reputacao/reputacao.module';
     NegociosModule, // Parte XI
     BiModule, // Parte XV
     MonetizacaoModule, // Parte XX
+    PerfilModule, // Parte IV
   ],
   controllers: [AppController],
 })
