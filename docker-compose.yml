@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: alphahub-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: alphahub
+      POSTGRES_PASSWORD: alphahub
+      POSTGRES_DB: alphahub
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alphahub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: alphahub-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://alphahub:alphahub@db:5432/alphahub?schema=public
+      JWT_SECRET: change-me-in-prod
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      WEB_ORIGIN: http://localhost:3000
+    ports:
+      - "3001:3001"
+    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+
+  web:
+    build:
+      context: ./apps/web
+    container_name: alphahub-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+
+volumes:
+  dbdata:

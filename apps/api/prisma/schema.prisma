@@ -1,0 +1,612 @@
+// Alpha Hub — modelo de dados (monólito modular, API-first, auditável).
+// Domínios: Identidade, Marketplace (solicitações/propostas), Comunicação (chat), Auditoria.
+// Decisão fundadora: núcleo gratuito, sem paywall; toda ação relevante gera trilha de auditoria.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Identidade ─────────────────────────────
+
+enum PapelMembro {
+  DONO
+  ADMIN
+  MEMBRO
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  senhaHash    String
+  nome         String
+  bio          String?
+  verificado   Boolean       @default(false)
+  papelSistema PapelSistema  @default(USUARIO)
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @updatedAt
+
+  membros      Membership[]
+  solicitacoes Solicitacao[] @relation("SolicitacaoAutor")
+  propostas    Proposta[]    @relation("PropostaAutor")
+  mensagens    Mensagem[]
+  participacoes ParticipanteConversa[]
+  auditoria    AuditLog[]
+  consentimentos Consentimento[]
+
+  // Indicações (Parte VII)
+  indicacoesFeitas      Indicacao[] @relation("IndicacaoIndicador")
+  indicacoesRecebidas   Indicacao[] @relation("IndicacaoDestinatario")
+  // Reputação (Parte X)
+  avaliacoesFeitas      Avaliacao[] @relation("AvaliacaoAutor")
+  avaliacoesRecebidas   Avaliacao[] @relation("AvaliacaoAlvo")
+  // Comunidade (Parte IX)
+  insights              Insight[]
+  insightVotos          InsightVoto[]
+  insightComentarios    InsightComentario[]
+  // Moderação (Parte XIV)
+  denunciasFeitas       Denuncia[]  @relation("DenunciaAutor")
+  denunciasResolvidas   Denuncia[]  @relation("DenunciaResolvedor")
+  sancoes               Sancao[]    @relation("SancaoAlvo")
+  sancoesAplicadas      Sancao[]    @relation("SancaoAplicador")
+  // Contratos (Parte XI)
+  contratosComoCliente   Contrato[] @relation("ContratoCliente")
+  contratosComoPrestador Contrato[] @relation("ContratoPrestador")
+  // Notificações (Parte XIII)
+  notificacoes           Notificacao[]
+  preferenciaNotificacao NotificacaoPreferencia?
+  // Monetização (Parte XX)
+  assinaturas            Assinatura[]
+
+  @@map("users")
+}
+
+enum PapelSistema {
+  USUARIO
+  MODERADOR
+  ADMIN
+}
+
+model Organization {
+  id           String   @id @default(cuid())
+  nome         String
+  documento    String?  @unique // CNPJ — verificação futura
+  verificado   Boolean  @default(false)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  membros      Membership[]
+  solicitacoes Solicitacao[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id        String      @id @default(cuid())
+  papel     PapelMembro @default(MEMBRO)
+  criadoEm  DateTime    @default(now())
+
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@map("memberships")
+}
+
+// Consentimento granular (LGPD) — base legal registrada e auditável.
+model Consentimento {
+  id        String   @id @default(cuid())
+  finalidade String  // ex.: "indicacao_comercial", "marketing"
+  concedido Boolean  @default(true)
+  baseLegal String   @default("consentimento")
+  criadoEm  DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("consentimentos")
+}
+
+// ──────────────────────────── Marketplace ─────────────────────────────
+
+enum SolicitacaoStatus {
+  ABERTA
+  EM_NEGOCIACAO
+  ENCERRADA
+  CANCELADA
+}
+
+enum PropostaStatus {
+  ENVIADA
+  EM_NEGOCIACAO
+  ACEITA
+  RECUSADA
+  RETIRADA
+}
+
+model Solicitacao {
+  id           String            @id @default(cuid())
+  titulo       String
+  descricao    String
+  categoria    String
+  orcamento    Int?              // em centavos; opcional
+  status       SolicitacaoStatus @default(ABERTA)
+  versao       Int               @default(1)
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+
+  autorId      String
+  autor        User              @relation("SolicitacaoAutor", fields: [autorId], references: [id])
+  orgId        String?
+  org          Organization?     @relation(fields: [orgId], references: [id])
+
+  propostas    Proposta[]
+  conversas    Conversa[]
+
+  @@index([status])
+  @@index([categoria])
+  @@map("solicitacoes")
+}
+
+model Proposta {
+  id            String         @id @default(cuid())
+  mensagem      String
+  valor         Int?           // em centavos; opcional
+  prazoDias     Int?
+  status        PropostaStatus @default(ENVIADA)
+  versao        Int            @default(1)
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+
+  solicitacaoId String
+  solicitacao   Solicitacao    @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+  autorId       String
+  autor         User           @relation("PropostaAutor", fields: [autorId], references: [id])
+
+  conversa      Conversa?
+  avaliacoes    Avaliacao[]
+  contrato      Contrato?
+
+  @@unique([solicitacaoId, autorId]) // uma proposta ativa por prestador por solicitação
+  @@index([status])
+  @@map("propostas")
+}
+
+// ──────────────────────────── Comunicação ─────────────────────────────
+
+enum TipoConversa {
+  SOLICITACAO
+  NEGOCIACAO
+}
+
+model Conversa {
+  id            String       @id @default(cuid())
+  tipo          TipoConversa @default(NEGOCIACAO)
+  criadoEm      DateTime     @default(now())
+
+  solicitacaoId String
+  solicitacao   Solicitacao  @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+  propostaId    String?      @unique
+  proposta      Proposta?    @relation(fields: [propostaId], references: [id], onDelete: SetNull)
+
+  participantes ParticipanteConversa[]
+  mensagens     Mensagem[]
+
+  @@map("conversas")
+}
+
+model ParticipanteConversa {
+  id         String   @id @default(cuid())
+  ultimaLeitura DateTime?
+  criadoEm   DateTime @default(now())
+
+  conversaId String
+  conversa   Conversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversaId, userId])
+  @@map("participantes_conversa")
+}
+
+model Mensagem {
+  id         String   @id @default(cuid())
+  conteudo   String
+  criadoEm   DateTime @default(now())
+
+  conversaId String
+  conversa   Conversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  autorId    String
+  autor      User     @relation(fields: [autorId], references: [id])
+
+  @@index([conversaId, criadoEm])
+  @@map("mensagens")
+}
+
+// ───────────────────────────── Auditoria ──────────────────────────────
+// 17.08 — guardar antes, depois, autor, origem, motivo, correlação e integridade.
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  acao        String   // ex.: "solicitacao.criada"
+  entidade    String   // ex.: "Solicitacao"
+  entidadeId  String?
+  antes       Json?
+  depois      Json?
+  motivo      String?
+  origem      String?  // ip / user-agent / canal
+  correlacao  String?  // request id
+  criadoEm    DateTime @default(now())
+
+  autorId     String?
+  autor       User?    @relation(fields: [autorId], references: [id], onDelete: SetNull)
+
+  @@index([entidade, entidadeId])
+  @@index([acao])
+  @@map("audit_logs")
+}
+
+// ───────────────────────── Indicações (Parte VII) ─────────────────────────
+// Mercado legítimo de leads: origem, consentimento, base legal, estágio,
+// reserva, comissão e anti-duplicidade. "Vender cliente" = indicação consentida.
+
+enum IndicacaoStatus {
+  CADASTRADA
+  RESERVADA
+  ACEITA
+  GANHA
+  PERDIDA
+  EXPIRADA
+  EM_DISPUTA
+}
+
+model Indicacao {
+  id            String          @id @default(cuid())
+  titulo        String
+  descricao     String
+  categoria     String
+  contatoNome   String
+  contatoInfo   String          // e-mail/telefone — só com consentimento confirmado
+  consentimento Boolean         @default(false)
+  baseLegal     String          @default("consentimento")
+  valorEstimado Int?            // centavos
+  comissaoPct   Float?          // % acordada
+  status        IndicacaoStatus @default(CADASTRADA)
+  reservadoAte  DateTime?
+  // Chave anti-duplicidade: hash de categoria+contato — evita revender o mesmo lead.
+  chaveDedup    String
+  criadoEm      DateTime        @default(now())
+  atualizadoEm  DateTime        @updatedAt
+
+  indicadorId    String
+  indicador      User           @relation("IndicacaoIndicador", fields: [indicadorId], references: [id])
+  destinatarioId String?
+  destinatario   User?          @relation("IndicacaoDestinatario", fields: [destinatarioId], references: [id])
+
+  @@unique([indicadorId, chaveDedup])
+  @@index([status])
+  @@index([categoria])
+  @@map("indicacoes")
+}
+
+// ───────────────────────── Reputação (Parte X) ───────────────────────────
+// Multidimensional e ligada a interação verificável (proposta aceita).
+// Sem nota única opaca: cada dimensão é guardada e agregada separadamente.
+
+model Avaliacao {
+  id             String   @id @default(cuid())
+  notaComunicacao Int     // 1..5
+  notaQualidade   Int     // 1..5
+  notaPrazo       Int     // 1..5
+  comentario      String?
+  criadoEm        DateTime @default(now())
+
+  autorId        String
+  autor          User     @relation("AvaliacaoAutor", fields: [autorId], references: [id])
+  alvoId         String
+  alvo           User     @relation("AvaliacaoAlvo", fields: [alvoId], references: [id])
+  propostaId     String   // contexto verificável da interação
+  proposta       Proposta @relation(fields: [propostaId], references: [id], onDelete: Cascade)
+
+  @@unique([autorId, propostaId]) // uma avaliação por interação por avaliador
+  @@index([alvoId])
+  @@map("avaliacoes")
+}
+
+// ───────────────────────── Comunidade / Insights (Parte IX) ───────────────
+
+model Insight {
+  id           String   @id @default(cuid())
+  titulo       String
+  conteudo     String
+  categoria    String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  autorId      String
+  autor        User     @relation(fields: [autorId], references: [id])
+
+  votos        InsightVoto[]
+  comentarios  InsightComentario[]
+
+  @@index([categoria])
+  @@map("insights")
+}
+
+model InsightVoto {
+  id        String   @id @default(cuid())
+  criadoEm  DateTime @default(now())
+
+  insightId String
+  insight   Insight  @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([insightId, userId])
+  @@map("insight_votos")
+}
+
+model InsightComentario {
+  id        String   @id @default(cuid())
+  conteudo  String
+  criadoEm  DateTime @default(now())
+
+  insightId String
+  insight   Insight  @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  autorId   String
+  autor     User     @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+  @@index([insightId, criadoEm])
+  @@map("insight_comentarios")
+}
+
+// ───────────────────────── Moderação / Admin (Parte XIV) ──────────────────
+
+enum AlvoTipo {
+  SOLICITACAO
+  PROPOSTA
+  MENSAGEM
+  INSIGHT
+  USUARIO
+}
+
+enum DenunciaStatus {
+  ABERTA
+  EM_ANALISE
+  PROCEDENTE
+  IMPROCEDENTE
+}
+
+model Denuncia {
+  id           String         @id @default(cuid())
+  alvoTipo     AlvoTipo
+  alvoId       String
+  motivo       String
+  descricao    String?
+  status       DenunciaStatus @default(ABERTA)
+  resolucao    String?
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @updatedAt
+
+  denuncianteId String
+  denunciante   User          @relation("DenunciaAutor", fields: [denuncianteId], references: [id])
+  resolvidoPorId String?
+  resolvidoPor   User?         @relation("DenunciaResolvedor", fields: [resolvidoPorId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([alvoTipo, alvoId])
+  @@map("denuncias")
+}
+
+enum SancaoTipo {
+  ADVERTENCIA
+  SUSPENSAO
+  BANIMENTO
+}
+
+model Sancao {
+  id        String     @id @default(cuid())
+  tipo      SancaoTipo
+  motivo    String
+  ativa     Boolean    @default(true)
+  expiraEm  DateTime?
+  criadoEm  DateTime   @default(now())
+
+  usuarioId    String
+  usuario      User     @relation("SancaoAlvo", fields: [usuarioId], references: [id], onDelete: Cascade)
+  aplicadaPorId String
+  aplicadaPor   User    @relation("SancaoAplicador", fields: [aplicadaPorId], references: [id])
+
+  @@index([usuarioId, ativa])
+  @@map("sancoes")
+}
+
+// ─────────── Negociação, contratos e pagamentos futuros (Parte XI) ───────────
+// Formaliza um acordo a partir de uma proposta aceita: escopo, marcos (entregáveis)
+// e pagamento protegido. O pagamento é ESCROW SIMULADO/registrado — a plataforma
+// NÃO movimenta dinheiro real (camada opcional/futura, conforme o escopo).
+
+enum ContratoStatus {
+  RASCUNHO
+  ATIVO
+  CONCLUIDO
+  CANCELADO
+  EM_DISPUTA
+}
+
+model Contrato {
+  id             String         @id @default(cuid())
+  escopo         String
+  valorTotal     Int            // centavos
+  prazoDias      Int?
+  status         ContratoStatus @default(RASCUNHO)
+  aceiteCliente  Boolean        @default(false)
+  aceitePrestador Boolean       @default(false)
+  criadoEm       DateTime       @default(now())
+  atualizadoEm   DateTime       @updatedAt
+
+  propostaId     String         @unique
+  proposta       Proposta       @relation(fields: [propostaId], references: [id], onDelete: Cascade)
+  clienteId      String
+  cliente        User           @relation("ContratoCliente", fields: [clienteId], references: [id])
+  prestadorId    String
+  prestador      User           @relation("ContratoPrestador", fields: [prestadorId], references: [id])
+
+  marcos         Marco[]
+  pagamentos     Pagamento[]
+
+  @@index([status])
+  @@map("contratos")
+}
+
+enum MarcoStatus {
+  PENDENTE
+  ENTREGUE
+  APROVADO
+  PAGO
+}
+
+model Marco {
+  id           String      @id @default(cuid())
+  titulo       String
+  descricao    String?
+  valor        Int         // centavos
+  ordem        Int         @default(0)
+  status       MarcoStatus @default(PENDENTE)
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  contratoId   String
+  contrato     Contrato    @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  pagamento    Pagamento?
+
+  @@index([contratoId, ordem])
+  @@map("marcos")
+}
+
+enum PagamentoStatus {
+  PENDENTE
+  RETIDO // em escrow (simulado)
+  LIBERADO
+  ESTORNADO
+}
+
+model Pagamento {
+  id           String          @id @default(cuid())
+  valor        Int             // centavos
+  status       PagamentoStatus @default(PENDENTE)
+  metodo       String          @default("escrow_simulado")
+  referencia   String?         // id externo simulado, p/ futura integração real
+  criadoEm     DateTime        @default(now())
+  atualizadoEm DateTime        @updatedAt
+
+  contratoId   String
+  contrato     Contrato        @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  marcoId      String?         @unique
+  marco        Marco?          @relation(fields: [marcoId], references: [id], onDelete: SetNull)
+
+  @@index([contratoId])
+  @@map("pagamentos")
+}
+
+// ───────────── Notificações, comunicação e retenção (Parte XIII) ─────────────
+// Motor de notificações reativo aos eventos do domínio, com preferências por
+// categoria e entrega em tempo real (socket). Sustenta engajamento e retenção.
+
+model Notificacao {
+  id         String   @id @default(cuid())
+  categoria  String   // proposta|mensagem|contrato|indicacao|comunidade|moderacao
+  tipo       String   // ex.: "proposta.recebida"
+  titulo     String
+  corpo      String
+  link       String?  // rota relativa no app, ex.: "/solicitacoes/abc"
+  lida       Boolean  @default(false)
+  entidade   String?
+  entidadeId String?
+  criadoEm   DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lida, criadoEm])
+  @@map("notificacoes")
+}
+
+model NotificacaoPreferencia {
+  id         String  @id @default(cuid())
+  proposta   Boolean @default(true)
+  mensagem   Boolean @default(true)
+  contrato   Boolean @default(true)
+  indicacao  Boolean @default(true)
+  comunidade Boolean @default(true)
+  moderacao  Boolean @default(true)
+
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notificacao_preferencias")
+}
+
+// ───────────── Monetização opcional, sem destruir gratuidade (Parte XX) ─────────────
+// O núcleo (publicar, propor, conversar, indicar, avaliar) é e permanece GRATUITO.
+// Planos são camadas OPCIONAIS: serviços empresariais, verificação, patrocínio rotulado.
+// Pagamento é SIMULADO/registrado — a plataforma não movimenta dinheiro real aqui.
+
+enum TipoPlano {
+  ASSINATURA
+  SERVICO
+  PATROCINIO
+}
+
+enum Periodicidade {
+  UNICO
+  MENSAL
+}
+
+enum StatusAssinatura {
+  ATIVA
+  CANCELADA
+}
+
+model Plano {
+  id            String        @id @default(cuid())
+  codigo        String        @unique
+  nome          String
+  descricao     String
+  preco         Int           // centavos (0 = gratuito)
+  periodicidade Periodicidade @default(MENSAL)
+  tipo          TipoPlano     @default(ASSINATURA)
+  recursos      String[]      // benefícios inclusos
+  destaque      Boolean       @default(false)
+  ativo         Boolean       @default(true)
+  ordem         Int           @default(0)
+  criadoEm      DateTime      @default(now())
+
+  assinaturas   Assinatura[]
+
+  @@map("planos")
+}
+
+model Assinatura {
+  id           String           @id @default(cuid())
+  status       StatusAssinatura @default(ATIVA)
+  metodo       String           @default("simulado") // sem pagamento real
+  inicioEm     DateTime         @default(now())
+  fimEm        DateTime?
+  criadoEm     DateTime         @default(now())
+  atualizadoEm DateTime         @updatedAt
+
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planoId      String
+  plano        Plano            @relation(fields: [planoId], references: [id])
+
+  @@index([userId, status])
+  @@map("assinaturas")
+}

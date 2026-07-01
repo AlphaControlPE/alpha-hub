@@ -1,0 +1,17 @@
+{
+  "name": "alpha-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Alpha Hub — marketplace gratuito (monólito modular, API-first, auditável)",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev:api": "npm --prefix apps/api run start:dev",
+    "dev:web": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
+    "test:api": "npm --prefix apps/api test",
+    "test:e2e": "npm --prefix apps/api run test:e2e",
+    "db:migrate": "npm --prefix apps/api run prisma:deploy",
+    "db:seed": "npm --prefix apps/api run seed",
+    "docker:up": "docker compose up --build"
+  }
+}

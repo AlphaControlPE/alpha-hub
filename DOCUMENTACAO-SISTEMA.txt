@@ -1,0 +1,261 @@
+==================================================================
+ALPHA HUB — DOCUMENTAÇÃO DO SISTEMA / CHANGELOG
+==================================================================
+Projeto:   Alpha Hub (marketplace gratuito de solicitações/propostas)
+Base:      Escopo Mestre (Alpha_Hub_Escopo_Mestre_150_Paginas.docx)
+Local:     C:\Users\alpha\Desktop\Alpha-Hub\   (pasta PRÓPRIA na Área de Trabalho)
+Obs.:      Projeto NOVO e SEPARADO do sistema Recy/Alpha Control.
+           Recy = produção de inventário, em C:\Users\alpha\Desktop\INV - V1 (NÃO foi tocado).
+           Em 2026-06-30 o projeto foi MOVIDO para esta pasta própria, a pedido do usuário.
+
+------------------------------------------------------------------
+2026-06-30 — Sessão 1: Fatia vertical do MVP (modo hard)
+------------------------------------------------------------------
+
+DECISÕES (alinhadas ao escopo):
+- Stack: TypeScript full-stack — NestJS + Prisma + PostgreSQL (API)
+  e Next.js 14 (App Router) + React 18 (web). [decisão do usuário]
+- Entregável desta sessão: FATIA VERTICAL funcional ponta-a-ponta
+  (cadastro/login -> publicar solicitação -> enviar proposta ->
+  negociar no chat em tempo real -> aceitar proposta). [decisão do usuário]
+- Ambiente: docker-compose (paridade) + PostgreSQL PORTÁTIL local,
+  pois esta máquina não tinha Docker nem Node instalados. [decisão do usuário]
+- Arquitetura: monólito modular, API-first, com trilha de auditoria
+  (decisões fundadoras do escopo, Partes XVI/XVII). Sem paywall: listar
+  solicitações é público; publicar/propor/conversar exige só conta.
+
+AÇÕES EXECUTADAS:
+1.  Lido e analisado o Escopo Mestre (20 partes / 160 capítulos).
+2.  Instalado Node.js LTS v24.18.0 via winget (escopo de usuário, sem admin).
+3.  Criado monorepo alpha-hub/ (apps/api, apps/web, docker-compose, scripts).
+4.  API NestJS:
+    - Domínios: identidade (auth JWT), marketplace (solicitações/propostas),
+      comunicação (chat REST + WebSocket socket.io), comum (Prisma, auditoria,
+      paginação, filtro de erros padronizado, Swagger em /api/docs).
+    - Prisma schema: User, Organization, Membership, Consentimento(LGPD),
+      Solicitacao, Proposta, Conversa, ParticipanteConversa, Mensagem, AuditLog.
+    - Regras: autor não propõe à própria solicitação; 1 proposta por prestador;
+      enviar proposta abre sala de negociação; só participante lê/escreve no chat;
+      só o autor da solicitação aceita proposta.
+5.  Web Next.js: home (feed + busca/filtro), login/cadastro, nova solicitação,
+    detalhe (propostas + aceitar + chat em tempo real), minhas conversas.
+    Design system próprio (globals.css), responsivo.
+6.  Provisionado PostgreSQL 16.4 PORTÁTIL (binários EDB, sem Docker/sem admin):
+    - Binários em %LOCALAPPDATA%\alphahub-pg ; dados em alpha-hub\.pgdata
+    - Banco "alphahub" em localhost:5432 (usuário/senha alphahub/alphahub)
+    - Script reutilizável: scripts/pg-portable.ps1 (start|stop|status)
+7.  Prisma migrate (migração init aplicada) + seed (2 usuários demo + dados).
+8.  Build da API (tsc/nest) e typecheck do web: OK.
+
+VERIFICAÇÃO (evidências):
+- Testes e2e: 12/12 PASSARAM (apps/api/test/fluxo.e2e-spec.ts) — cobrem o
+  fluxo completo + caminhos de erro (validação, permissões, acesso ao chat).
+- API no ar em http://localhost:3001/api — /api/health OK; login real
+  retornou JWT para cliente@alphahub.dev.
+- Web no ar em http://localhost:3000 — home renderiza dados reais (3 resultados);
+  login no navegador via API (CORS) retornou 201; UI autenticada exibiu estado
+  logado (Conversas / Nova solicitação / avatar / Sair) após /auth/me.
+
+CORREÇÕES FEITAS DURANTE A SESSÃO:
+- e2e: createApplication -> createNestApplication.
+- tsconfig: excluído test/ e prisma/seed.ts do build para gerar dist/main.js
+  na raiz (compatível com o Dockerfile).
+
+CONTAS DE DEMONSTRAÇÃO (após seed):
+- cliente@alphahub.dev   / alphahub123  (Marina Cliente)
+- prestador@alphahub.dev / alphahub123  (Bruno Designer)
+
+COMO RETOMAR / SUBIR DE NOVO (sem Docker):
+  1) Postgres:  powershell scripts/pg-portable.ps1 start   (já fica de pé)
+  2) API:       (em apps/api) node dist/main.js            (porta 3001)
+  3) Web:       (em apps/web) next dev -p 3000             (porta 3000)
+  Node está em:
+  %LOCALAPPDATA%\Microsoft\WinGet\Packages\OpenJS.NodeJS.LTS_*\node-v24.18.0-win-x64
+
+PRÓXIMOS PASSOS (roadmap do escopo):
+- Indicações consentidas (Parte VII), reputação multidimensional (Parte X),
+  comunidade/insights (Parte IX), busca/matching dedicados (Parte XII),
+  moderação/admin (Parte XIV), monetização opcional (Parte XX).
+==================================================================
+
+------------------------------------------------------------------
+2026-06-30 — Sessão 2: Mudança de pasta + roadmap completo (Partes VII–XIV)
+------------------------------------------------------------------
+
+DECISÕES / CORREÇÕES:
+- O usuário esclareceu que o Alpha Hub NÃO deveria estar dentro de INV - V1
+  (projeto de inventário). MOVIDO para pasta própria: C:\Users\alpha\Desktop\Alpha-Hub.
+  Revertido o launch.json do INV - V1 (removida a entrada "web"); footprint limpo.
+- Postgres portátil reiniciado apontando para Alpha-Hub\.pgdata (dados preservados).
+- Autorizado "atacar tudo": implementadas as Partes VII, IX, X, XII e XIV.
+
+NOVOS MÓDULOS (backend NestJS, todos com auditoria):
+- Parte VII  Indicações: modelo Indicacao (origem, consentimento/LGPD, base legal,
+  comissão, reserva 7 dias, anti-duplicidade por hash). Contato mascarado até reserva.
+  Endpoints: POST/GET /indicacoes, GET :id, POST :id/reservar, PATCH :id/status.
+- Parte X   Reputação multidimensional: modelo Avaliacao (comunicação/qualidade/prazo,
+  1..5 + comentário) ligada a proposta ACEITA; agregado por dimensão (sem nota única).
+  Endpoints: POST /avaliacoes, GET /usuarios/:id/reputacao, GET /avaliacoes/pendentes.
+- Parte IX  Comunidade/Insights: Insight + voto (toggle) + comentários.
+  Endpoints: GET/POST /insights, GET :id, POST :id/voto, POST :id/comentarios.
+- Parte XII Busca & Matching: GET /matching/solicitacoes (recomendação por histórico,
+  exclui próprias/já-propostas, ranking transparente) e GET /busca?q= (global).
+- Parte XIV Moderação/Admin: papelSistema (USUARIO/MODERADOR/ADMIN) no JWT + PapeisGuard.
+  Denuncia + Sancao. Endpoints: POST /denuncias; (staff) GET /admin/denuncias,
+  PATCH /admin/denuncias/:id, POST /admin/sancoes, GET /admin/metricas.
+
+FRONTEND (Next.js) adicionado:
+- /comunidade (+ /comunidade/[id]), /indicacoes, /admin (métricas + denúncias).
+- Componentes: Avaliar (estrelas), ReputacaoBadge, ReportButton (denúncia inline).
+- Home: faixa "Recomendadas para você" (matching). Nav com Comunidade/Indicações/Admin.
+
+BANCO: migração 20260630145110_fases_vii_a_xiv aplicada. Seed ampliado
+(admin@alphahub.dev ADMIN; proposta aceita + avaliação; 1 indicação; 1 insight com voto+comentário).
+
+VERIFICAÇÃO:
+- Testes e2e: 24/24 PASSARAM (fluxo.e2e-spec 12 + fases.e2e-spec 12 cobrindo VII–XIV,
+  incluindo caminhos de erro: LGPD sem consentimento=400, avaliação duplicada=409,
+  não-admin no painel=403, mascaramento de contato, voto toggle, etc.).
+- Build API e typecheck web: OK. API/Web/Postgres no ar (3001/3000/5432).
+- Smoke test: /admin/metricas (usuarios 11, eventosAuditoria 29), /indicacoes, /insights.
+- Páginas /, /comunidade, /indicacoes, /admin, /login respondem HTTP 200.
+
+CONTA ADMIN (seed): admin@alphahub.dev / alphahub123  (papel ADMIN).
+==================================================================
+
+------------------------------------------------------------------
+2026-06-30 — Sessão 3: Parte XI — Negociação, contratos e pagamentos
+------------------------------------------------------------------
+
+DECISÃO IMPORTANTE (segurança + escopo):
+- Pagamento é ESCROW SIMULADO/registrado. A plataforma NÃO movimenta dinheiro real
+  (camada futura/opcional do escopo). É uma máquina de estados auditável, sem
+  integração financeira real.
+
+BACKEND (módulo "negocios", com auditoria):
+- Modelos: Contrato (escopo, valorTotal, prazoDias, status, assinaturas das 2 partes),
+  Marco (entregável: titulo/valor/ordem/status), Pagamento (escrow simulado).
+- Ciclo de vida: formalizar (de proposta ACEITA) -> RASCUNHO -> assinar (as 2 partes)
+  -> ATIVO (cria escrow RETIDO por marco) -> prestador ENTREGA marco -> cliente APROVA
+  (escrow RETIDO->LIBERADO, marco PAGO) -> quando todos pagos -> CONCLUIDO.
+- Endpoints: GET /contratos, GET/POST /contratos[/:id], POST :id/assinar,
+  POST :id/marcos/:marcoId/entregar, POST :id/marcos/:marcoId/aprovar.
+- Regras: 1 contrato por proposta (unique), só partes acessam, papéis corretos
+  para entregar/aprovar, contrato só ativa com as 2 assinaturas.
+
+FRONTEND:
+- Página /contratos (lista + gestão). Componentes ContratoView (assinar/entregar/
+  aprovar/escrow) e FormalizarContrato (escopo + marcos dinâmicos).
+- Integrado ao detalhe da solicitação: proposta ACEITA mostra "Formalizar contrato"
+  ou o contrato existente. Link "Contratos" no menu.
+
+BANCO: migração 20260630161033_parte_xi_contratos. Seed cria 1 contrato ATIVO
+(220000, 2 marcos, escrow RETIDO) para a proposta aceita demonstrativa.
+
+CORREÇÃO: em "assinar", o objeto retornado era montado antes de criar os pagamentos
+(escrow vinha vazio); passou a re-buscar o contrato após criar o escrow. Também
+ajustado um teste e2e (título de marco precisa ter >= 2 caracteres).
+
+VERIFICAÇÃO:
+- e2e: 30/30 PASSARAM (12 fluxo + 12 fases + 6 contratos), cobrindo o ciclo completo
+  e erros (duplicar contrato=409, papel errado=403, ativar só com 2 assinaturas,
+  terceiro sem acesso=403).
+- Build API + typecheck web OK. Smoke: GET /contratos do cliente -> contrato ATIVO,
+  valorTotal 220000, 2 marcos, 2 pagamentos RETIDO. Páginas /contratos e / -> HTTP 200.
+==================================================================
+
+------------------------------------------------------------------
+2026-06-30 — Sessão 4: Parte XIII — Notificações, comunicação e retenção
+------------------------------------------------------------------
+
+BACKEND (módulo "notificacoes", @Global):
+- Modelos: Notificacao (destinatário, categoria, tipo, título, corpo, link, lida)
+  e NotificacaoPreferencia (toggle por categoria: proposta/mensagem/contrato/
+  indicacao/comunidade/moderacao).
+- NotificacoesService.notificar() respeita a preferência da categoria e é tolerante
+  a falhas (nunca derruba o fluxo de negócio). NotificacoesGateway (socket.io) entrega
+  em tempo real: cada socket autenticado entra na sala pessoal user:<id> e recebe
+  o evento "notificacao:nova".
+- Endpoints: GET /notificacoes, GET /notificacoes/contador, PATCH :id/lida,
+  PATCH /notificacoes/lidas, GET/PATCH /notificacoes/preferencias.
+
+DISPAROS integrados aos fluxos (respeitando preferências):
+- proposta recebida -> cliente; proposta aceita -> prestador;
+- nova mensagem -> demais participantes da conversa;
+- contrato assinado/ativado -> outra parte; marco entregue -> cliente;
+  marco aprovado / contrato concluído -> prestador;
+- indicação reservada -> indicador; denúncia resolvida -> denunciante.
+
+FRONTEND:
+- Sino (NotificationBell) no menu com contador de não lidas e atualização em TEMPO
+  REAL via socket; dropdown com itens, clique marca lida e navega pelo link.
+- Página /notificacoes (lista + "marcar todas" + preferências por categoria com toggles).
+
+BANCO: migração 20260630200317_parte_xiii_notificacoes.
+
+VERIFICAÇÃO:
+- e2e: 34/34 PASSARAM (12 fluxo + 12 fases + 6 contratos + 4 notificações). Os testes de
+  notificação cobrem: disparo em proposta recebida/aceita, contador, marcar todas lidas
+  e ENFORCEMENT de preferência (categoria desligada não gera novas notificações).
+- API DI OK no boot (7 rotas de notificação mapeadas). Smoke ao vivo: proposta real ->
+  contador do cliente = 1, última = "Nova proposta recebida" (proposta.recebida).
+  Páginas /notificacoes e / -> HTTP 200.
+==================================================================
+
+------------------------------------------------------------------
+2026-06-30 — Sessão 5: Parte XV — Dados, BI e inteligência operacional
+------------------------------------------------------------------
+
+BACKEND (módulo "bi", somente MODERADOR/ADMIN via PapeisGuard, SEM migração):
+- Agregações read-only sobre os dados já existentes (incl. trilha de auditoria).
+- GET /admin/bi/overview: KPIs de liquidez (taxa com resposta, propostas/solicitação),
+  conversão (taxa de aceite, contratos, taxa de conclusão), confiança (avaliações,
+  nota média, denúncias) e conhecimento (insights).
+- GET /admin/bi/funil: Solicitações -> Com proposta -> Aceita -> Contrato -> Concluído (com %).
+- GET /admin/bi/categorias: distribuição de solicitações por categoria (groupBy).
+- GET /admin/bi/serie?dias=N: série temporal de eventos por dia ($queryRaw date_trunc
+  sobre audit_logs).
+
+FRONTEND:
+- Página /admin/bi: cards de KPI, funil (barras), categorias (barras) e série temporal
+  (mini gráfico de barras). Tudo em CSS puro, sem dependência de biblioteca de gráficos.
+  Botão "Dados & BI" no painel /admin.
+
+VERIFICAÇÃO:
+- e2e: 38/38 PASSARAM (12 fluxo + 12 fases + 6 contratos + 4 notificações + 4 BI). Os de BI
+  cobrem bloqueio de não-staff (403) e o formato de overview/funil/categorias/série.
+- Smoke ao vivo (admin): liquidez 23 solicitações / 95,7% com resposta; conversão 86,4%
+  de aceite, 6 contratos; confiança média 4,7★; 196 eventos auditados; funil
+  23->22->19->6->5. Páginas /admin/bi e / -> HTTP 200.
+==================================================================
+
+------------------------------------------------------------------
+2026-07-01 — Sessão 6: Parte XX — Monetização opcional (sem destruir gratuidade)
+------------------------------------------------------------------
+
+PRINCÍPIO (decisão fundadora): o NÚCLEO é e continua GRÁTIS (publicar, propor,
+conversar, indicar, avaliar). Planos são camadas OPCIONAIS e nunca condicionam a
+participação. Pagamento é SIMULADO/registrado — não movimenta dinheiro real.
+
+BACKEND (módulo "monetizacao"):
+- Modelos: Plano (catálogo: codigo, nome, preço, periodicidade, tipo, recursos[],
+  destaque) e Assinatura (status, metodo="simulado", inicio/fim).
+- Endpoints: GET /planos (público), GET /planos/minhas, POST /planos/:id/assinar
+  (simulado; bloqueia duplicada ativa; plano com recurso "selo_verificado" concede
+  verificado=true), POST /assinaturas/:id/cancelar. Tudo auditado.
+
+FRONTEND:
+- Página /planos: banner "núcleo é grátis", cards do catálogo (recursos internos
+  como selo_verificado ficam ocultos), assinar/cancelar, "minhas assinaturas".
+  Link "Planos" no menu.
+
+SEED: catálogo com 4 planos — Comunidade (R$0), Verificado Pro (R$29,90/mês, selo),
+Empresarial (R$99,90/mês), Patrocínio rotulado (R$199,90 único).
+
+VERIFICAÇÃO:
+- e2e: 45/45 PASSARAM (12 fluxo + 12 fases + 6 contratos + 4 notif + 4 BI + 7 monetização).
+  Cobre: catálogo público tem plano grátis, NÚCLEO funciona sem assinatura, assinar
+  simulado (ATIVA/metodo=simulado), duplicada=409, cancelar, exige auth=401.
+- Smoke ao vivo: catálogo Comunidade/Verificado Pro/Empresarial/Patrocínio;
+  assinatura "Verificado Pro" -> ATIVA/simulado. Páginas /planos e / -> HTTP 200.
+==================================================================
