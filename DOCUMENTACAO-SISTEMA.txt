@@ -259,3 +259,31 @@ VERIFICAÇÃO:
 - Smoke ao vivo: catálogo Comunidade/Verificado Pro/Empresarial/Patrocínio;
   assinatura "Verificado Pro" -> ATIVA/simulado. Páginas /planos e / -> HTTP 200.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-01 — Sessão 7: Preparação de deploy (colocar na web)
+------------------------------------------------------------------
+
+CONTEXTO: usuário pediu para "subir no web". Honestidade registrada: publicar
+exige contas/hospedagem no nome do usuário (não é possível eu criar conta/pagar/
+autenticar por ele). Escolha de hospedagem delegada a mim: RENDER (site+API+banco
+num provedor só, deploy a partir do GitHub); usuário já tem GitHub.
+
+FEITO (parte que é minha):
+- git init + 2 commits (132+ arquivos). Confirmado que node_modules/.pgdata/.env
+  NÃO entram no repositório.
+- render.yaml (Blueprint): Postgres + serviço API + serviço Web, com variáveis
+  já ligadas (DATABASE_URL do banco, JWT_SECRET gerado, WEB_ORIGIN e
+  NEXT_PUBLIC_API_URL apontando para os domínios .onrender.com). Start da API roda
+  migrate deploy + seed (idempotente).
+- engines Node>=20 nos dois package.json.
+- DEPLOY.md: passo a passo (push pro GitHub -> New Blueprint no Render -> Apply).
+  Documentados limites do grátis (serviços dormem; Postgres grátis expira) e
+  alternativa Railway (sempre ligado, ~US$5/mês).
+- VERIFICAÇÃO: `next build` de produção PASSOU (14/14 páginas, exit 0); API já
+  buildava limpo. WebSocket (chat/notificações) compatível com Render.
+
+FALTA (parte do usuário, precisa das contas dele):
+1) criar repo no GitHub e `git push`; 2) Render -> New Blueprint -> escolher o
+   repo -> Apply. Depois: site em https://alpha-hub-web.onrender.com.
+==================================================================
