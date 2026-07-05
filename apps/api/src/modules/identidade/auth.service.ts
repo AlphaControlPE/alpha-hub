@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -56,6 +57,23 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (!user || !(await bcrypt.compare(dto.senha, user.senhaHash))) {
       throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    // Bloqueia conta com sanção ativa de suspensão/banimento (P0).
+    const sancao = await this.prisma.sancao.findFirst({
+      where: {
+        usuarioId: user.id,
+        ativa: true,
+        tipo: { in: ['SUSPENSAO', 'BANIMENTO'] },
+        OR: [{ expiraEm: null }, { expiraEm: { gt: new Date() } }],
+      },
+    });
+    if (sancao) {
+      throw new ForbiddenException(
+        sancao.tipo === 'BANIMENTO'
+          ? 'Sua conta foi banida. Fale com o suporte.'
+          : 'Sua conta está suspensa temporariamente. Fale com o suporte.',
+      );
     }
 
     await this.audit.registrar({

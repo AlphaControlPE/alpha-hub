@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AuditModule } from './common/audit/audit.module';
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -19,6 +21,11 @@ import { ReputacaoModule } from './modules/reputacao/reputacao.module';
 
 @Module({
   imports: [
+    // Rate-limiting global anti-abuso/força-bruta (P0). Desativado em teste.
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60000, limit: 120 }],
+      skipIf: () => process.env.NODE_ENV === 'test',
+    }),
     PrismaModule,
     AuditModule,
     NotificacoesModule, // Parte XIII (global)
@@ -37,5 +44,6 @@ import { ReputacaoModule } from './modules/reputacao/reputacao.module';
     OrganizacoesModule, // Parte III
   ],
   controllers: [AppController],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

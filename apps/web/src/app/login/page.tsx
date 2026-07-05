@@ -60,12 +60,6 @@ export default function LoginPage() {
             {enviando ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta grátis'}
           </button>
         </form>
-
-        <div className="sep" />
-        <p className="muted" style={{ fontSize: 12 }}>
-          Contas de demonstração: <br />
-          <code>cliente@alphahub.dev</code> · <code>prestador@alphahub.dev</code> — senha <code>alphahub123</code>
-        </p>
       </div>
     </div>
   );

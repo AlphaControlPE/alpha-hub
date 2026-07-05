@@ -10,6 +10,13 @@ const dedup = (categoria: string, contato: string) =>
 async function main(): Promise<void> {
   const senhaHash = await bcrypt.hash('alphahub123', 10);
 
+  // P0: senha do admin vem do ambiente. Em produção, defina ADMIN_SENHA (e
+  // opcionalmente ADMIN_EMAIL) no provedor para NÃO usar a senha de demonstração.
+  const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@alphahub.dev';
+  const adminSenhaHash = process.env.ADMIN_SENHA
+    ? await bcrypt.hash(process.env.ADMIN_SENHA, 10)
+    : senhaHash;
+
   const cliente = await prisma.user.upsert({
     where: { email: 'cliente@alphahub.dev' },
     update: {},
@@ -34,13 +41,13 @@ async function main(): Promise<void> {
     },
   });
 
-  // Admin/moderação (Parte XIV) — garante o papel mesmo em re-execução.
+  // Admin/moderação (Parte XIV) — papel garantido e senha rotacionada por env.
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@alphahub.dev' },
-    update: { papelSistema: 'ADMIN' },
+    where: { email: adminEmail },
+    update: { papelSistema: 'ADMIN', senhaHash: adminSenhaHash },
     create: {
-      email: 'admin@alphahub.dev',
-      senhaHash,
+      email: adminEmail,
+      senhaHash: adminSenhaHash,
       nome: 'Alex Admin',
       bio: 'Equipe Alpha Hub — moderação e operação.',
       verificado: true,

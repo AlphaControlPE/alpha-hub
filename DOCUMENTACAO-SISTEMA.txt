@@ -361,3 +361,32 @@ RETOMADA: revisar diff do working tree -> prisma generate+migrate -> build/typec
 -> e2e -> completar frontend se faltar -> commit+push. Depois: Agente 3 (XVIII/XIX)
 e etapa de domínio.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-05 — Sessão 10: Parte III integrada + P0 (blindar produção)
+------------------------------------------------------------------
+
+PARTE III (finalizada/publicada): frontend /organizacoes (gestão de equipe:
+membros por email, papéis DONO/ADMIN/MEMBRO, sair/remover, pedir verificação),
+seção "Verificações pendentes" no /admin, link no menu, e2e (9 testes). Migração
+parte_iii_organizacoes. Commit 7424b3d.
+
+P0 — BLINDAGEM DE SEGURANÇA:
+- Credenciais de demonstração REMOVIDAS da tela de login (não anunciar a visitantes).
+- Senha do admin via env: seed usa ADMIN_SENHA (e ADMIN_EMAIL); sem env cai na
+  senha de demo. render.yaml agora pede ADMIN_SENHA/ADMIN_EMAIL (sync:false) —
+  AÇÃO DO USUÁRIO: definir ADMIN_SENHA forte no painel do Render.
+- Rate-limiting (@nestjs/throttler): global 120/min; login e register 10/min por IP.
+  Desativado em teste (skipIf NODE_ENV=test). trust proxy p/ IP real no Render.
+- Login bloqueado (403) para usuário com sanção ativa SUSPENSAO/BANIMENTO.
+- helmet: cabeçalhos de segurança (X-Frame-Options, X-Content-Type-Options...).
+
+NOTA DE AMBIENTE: rodar `npm install` dentro de apps/api (workspace) hasteou o
+node_modules e quebrou a resolução do class-validator localmente. Corrigido
+reinstalando apps/api auto-contido (escondendo o package.json raiz no install).
+Não afeta o Render (install limpo por serviço).
+
+VERIFICAÇÃO: build API + typecheck web OK. e2e 64/64 (novo seguranca.e2e-spec:
+login banido=403). Smoke no build de produção: helmet headers presentes;
+rate-limit no login retorna 429 após 10 tentativas.
+==================================================================

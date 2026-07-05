@@ -1,11 +1,18 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+
+  // Cabeçalhos de segurança (P0). CSP/CORP desligados: a API é cross-origin
+  // do site e serve o Swagger; o CORS abaixo controla o acesso do frontend.
+  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+  // Atrás do proxy do Render — usa o IP real (X-Forwarded-For) no rate-limit.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   app.setGlobalPrefix('api');
   app.enableCors({

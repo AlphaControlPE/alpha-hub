@@ -33,6 +33,12 @@ services:
         value: 7d
       - key: WEB_ORIGIN
         value: https://alpha-hub-web.onrender.com
+      # P0 segurança: defina uma senha admin forte no painel do Render.
+      # Se ficar em branco, cai na senha de demonstração (troque antes de divulgar).
+      - key: ADMIN_SENHA
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
 
   # ---------- Web (Next.js) ----------
   - type: web
