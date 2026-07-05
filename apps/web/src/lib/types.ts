@@ -74,6 +74,31 @@ export interface PerfilPublico {
   servicos: ServicoOferecido[];
 }
 
+// Organizações, equipes e verificação (Parte III)
+export type StatusVerificacao = 'NAO_SOLICITADA' | 'PENDENTE' | 'APROVADA' | 'REJEITADA';
+export type PapelMembro = 'DONO' | 'ADMIN' | 'MEMBRO';
+
+export interface MembroOrg {
+  userId: string;
+  nome: string;
+  papel: PapelMembro;
+  desde?: string;
+}
+
+export interface Organizacao {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  documento: string | null;
+  verificado: boolean;
+  verificacaoStatus: StatusVerificacao;
+  criadoEm: string;
+  meuPapel?: PapelMembro;
+  totalMembros?: number;
+  membros?: MembroOrg[];
+  dono?: Usuario | null; // presente na listagem staff de verificações
+}
+
 export interface Denuncia {
   id: string;
   alvoTipo: string;

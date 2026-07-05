@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Denuncia, Metricas } from '@/lib/types';
+import { Denuncia, Metricas, Organizacao } from '@/lib/types';
 
 const ehStaff = (p?: string) => p === 'ADMIN' || p === 'MODERADOR';
 
@@ -14,24 +14,32 @@ export default function AdminPage() {
   const { usuario, carregando } = useAuth();
   const [metricas, setMetricas] = useState<Metricas | null>(null);
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
+  const [verificacoes, setVerificacoes] = useState<Organizacao[]>([]);
 
   useEffect(() => {
     if (!carregando && !ehStaff(usuario?.papelSistema)) router.replace('/');
   }, [carregando, usuario, router]);
 
   const carregar = useCallback(async () => {
-    const [m, d] = await Promise.all([
+    const [m, d, v] = await Promise.all([
       api<Metricas>('/admin/metricas'),
       api<Denuncia[]>('/admin/denuncias'),
+      api<Organizacao[]>('/admin/verificacoes'),
     ]);
     setMetricas(m);
     setDenuncias(d);
+    setVerificacoes(v);
   }, []);
 
   useEffect(() => { if (ehStaff(usuario?.papelSistema)) carregar(); }, [usuario, carregar]);
 
   async function resolver(id: string, status: 'PROCEDENTE' | 'IMPROCEDENTE') {
     await api(`/admin/denuncias/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    await carregar();
+  }
+
+  async function decidirVerificacao(orgId: string, decisao: 'APROVADA' | 'REJEITADA') {
+    await api(`/admin/verificacoes/${orgId}`, { method: 'PATCH', body: JSON.stringify({ decisao }) });
     await carregar();
   }
 
@@ -63,6 +71,28 @@ export default function AdminPage() {
             <div className="muted" style={{ fontSize: 12 }}>{label}</div>
           </div>
         ))}
+      </div>
+
+      <h2 className="h2">Verificações de organização pendentes</h2>
+      <div className="card" style={{ marginBottom: 24 }}>
+        {verificacoes.length === 0 ? (
+          <div className="empty">Nenhuma verificação pendente.</div>
+        ) : (
+          verificacoes.map((o) => (
+            <div key={o.id} className="sol-item between">
+              <div>
+                <strong>{o.nome}</strong>
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  CNPJ: {o.documento ?? '—'} · dono: {o.dono?.nome ?? '—'}
+                </div>
+              </div>
+              <span className="row">
+                <button className="btn btn-accent btn-sm" onClick={() => decidirVerificacao(o.id, 'APROVADA')}>Aprovar</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => decidirVerificacao(o.id, 'REJEITADA')}>Rejeitar</button>
+              </span>
+            </div>
+          ))
+        )}
       </div>
 
       <h2 className="h2">Denúncias</h2>

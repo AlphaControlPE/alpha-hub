@@ -343,3 +343,21 @@ VERIFICAÇÃO: build API + typecheck web OK; e2e 52/52 PASSARAM (7 suítes; novo
 perfil.e2e-spec com 7 testes: perfil público sem auth e sem vazar dados, dono
 edita, terceiro não remove=403, validação=400).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-01 — PAUSA por ordem do usuário ("pare até segunda ordem")
+------------------------------------------------------------------
+ESTADO ao pausar:
+- NO AR (Render, intocado): site https://alpha-hub-web.onrender.com e
+  API https://alpha-hub-api.onrender.com/api — com MVP + Partes III..XX até a
+  Parte IV inclusive (commit 6a8bc20 publicado).
+- Parte III (Organizações/verificação): código do Agente 2 PRONTO NO WORKING TREE,
+  NÃO commitado / NÃO revisado / NÃO migrado / NÃO publicado. Inclui: enum
+  StatusVerificacao + campos na Organization (schema), módulo organizacoes/ na API,
+  tipos web e (a conferir) páginas/nav/teste.
+- Local: nenhum serviço rodando (3000/3001/5432 fechados). Dados locais preservados
+  em .pgdata.
+RETOMADA: revisar diff do working tree -> prisma generate+migrate -> build/typecheck
+-> e2e -> completar frontend se faltar -> commit+push. Depois: Agente 3 (XVIII/XIX)
+e etapa de domínio.
+==================================================================

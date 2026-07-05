@@ -74,11 +74,21 @@ enum PapelSistema {
   ADMIN
 }
 
+// Parte III — fluxo de verificação de organizações (selo de confiança).
+enum StatusVerificacao {
+  NAO_SOLICITADA
+  PENDENTE
+  APROVADA
+  REJEITADA
+}
+
 model Organization {
   id           String   @id @default(cuid())
   nome         String
+  descricao    String?  // Parte III — apresentação pública da organização
   documento    String?  @unique // CNPJ — verificação futura
   verificado   Boolean  @default(false)
+  verificacaoStatus StatusVerificacao @default(NAO_SOLICITADA) // Parte III
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 

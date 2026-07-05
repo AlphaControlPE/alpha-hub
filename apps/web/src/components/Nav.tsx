@@ -20,6 +20,7 @@ export function Nav() {
         <Link href="/comunidade" className="navlink">Comunidade</Link>
         <Link href="/planos" className="navlink">Planos</Link>
         {usuario && <Link href="/indicacoes" className="navlink">Indicações</Link>}
+        {usuario && <Link href="/organizacoes" className="navlink">Organizações</Link>}
         {usuario && <Link href="/contratos" className="navlink">Contratos</Link>}
         {usuario && <Link href="/conversas" className="navlink">Conversas</Link>}
         {usuario && (usuario.papelSistema === 'ADMIN' || usuario.papelSistema === 'MODERADOR') && (
