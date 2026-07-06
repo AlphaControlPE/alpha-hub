@@ -1,0 +1,49 @@
+# Backup automático do banco Postgres do Alpha Hub.
+#
+# PRÉ-REQUISITO (uma vez): no GitHub, vá em
+#   Settings > Secrets and variables > Actions > New repository secret
+#   Nome: DATABASE_URL
+#   Valor: a "External Database URL" do Postgres no Render
+#          (Dashboard > alpha-hub-db > Connect > External Database URL)
+#
+# Roda todo dia às 06:00 UTC e também pode ser disparado manualmente
+# (aba Actions > Backup do banco > Run workflow). O dump fica guardado
+# como "artifact" por 14 dias.
+
+name: Backup do banco
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar cliente PostgreSQL 16
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+
+      - name: Gerar dump comprimido
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "ERRO: o secret DATABASE_URL não está configurado no repositório." >&2
+            exit 1
+          fi
+          mkdir -p backups
+          STAMP="$(date +%Y%m%d-%H%M%S)"
+          pg_dump --no-owner --no-privileges "$DATABASE_URL" | gzip -9 > "backups/alphahub-$STAMP.sql.gz"
+          ls -lh backups/
+
+      - name: Guardar dump como artifact (14 dias)
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-postgres
+          path: backups/*.sql.gz
+          retention-days: 14

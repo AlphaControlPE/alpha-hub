@@ -128,3 +128,9 @@ e faixa “Recomendadas para você” na home.
 Verificação avançada de identidade/empresa (03.08) · integração de pagamento
 real/escrow com parceiro (substitui o simulado) · organizações/equipes completas ·
 observabilidade e DevOps de produção (Partes XVI/XIX) · empacotamento e deploy.
+
+## Backup & recuperação
+
+O banco de produção guarda tudo. Faça backup e tenha um plano para a expiração do
+Postgres grátis do Render — passo a passo em [BACKUP.md](BACKUP.md). Há também um
+GitHub Action de backup diário (basta configurar o secret `DATABASE_URL`).

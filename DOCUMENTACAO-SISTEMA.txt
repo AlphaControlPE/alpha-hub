@@ -390,3 +390,21 @@ VERIFICAÇÃO: build API + typecheck web OK. e2e 64/64 (novo seguranca.e2e-spec:
 login banido=403). Smoke no build de produção: helmet headers presentes;
 rate-limit no login retorna 429 após 10 tentativas.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-05 — Sessão: P0 (feito por sessão anterior) + P1 backup + nota de cwd
+------------------------------------------------------------------
+- Confirmado: P0 de segurança JÁ commitado e PUBLICADO (94372aa): rate-limit
+  (@nestjs/throttler), login de usuário sancionado bloqueado, helmet, senha admin
+  via env (ADMIN_SENHA/ADMIN_EMAIL no render.yaml, sync:false). Site no ar protegido.
+- P1 Preservação (backup): scripts/backup-db.sh|.ps1 (dump comprimido), restore-db.sh,
+  .github/workflows/backup.yml (Action diária, secret DATABASE_URL), BACKUP.md
+  (External URL do Render, backup manual/automático, restore, plano p/ expiração:
+  upgrade pago OU migrar p/ Neon). backups/ no .gitignore.
+- Agentes em background NÃO sobrevivem a reinício de sessão (Agente A morreu deixando
+  só 2 scripts; completei o P1 direto). Decisão: nesta sessão instável, implementar
+  direto em vez de depender de subagentes.
+- NOTA cwd: a sessão abre em INV - V1, mas o Alpha Hub é em C:\Users\alpha\Desktop\Alpha-Hub
+  (sempre por caminho absoluto). Registrado na memória (alpha-hub-cwd-vinculo).
+  Para resolver de vez: abrir o Claude Code já dentro da pasta Alpha-Hub.
+==================================================================

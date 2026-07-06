@@ -9,3 +9,6 @@ coverage/
 .pgdata/
 .pgportable/
 *.tsbuildinfo
+
+# dumps de backup do banco (não versionar)
+backups/
