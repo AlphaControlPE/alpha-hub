@@ -18,6 +18,35 @@
 
 * { box-sizing: border-box; }
 
+/* Acessibilidade: pular navegação (visível só ao focar via teclado) */
+.skip-link {
+  position: fixed; left: 12px; top: -80px; z-index: 100;
+  background: var(--primary-strong); color: #fff; font-weight: 700;
+  padding: 10px 16px; border-radius: 10px; box-shadow: var(--shadow);
+  transition: top .15s ease;
+}
+.skip-link:focus { top: 12px; }
+
+/* Anel de foco visível para quem navega por teclado */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+main:focus { outline: none; }
+
+/* Texto só para leitores de tela */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* Respeitar quem prefere menos animação */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 html, body {
   margin: 0;
   padding: 0;

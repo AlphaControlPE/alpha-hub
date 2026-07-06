@@ -440,3 +440,22 @@ A FAZER (próximo chat):
 - PWA + acessibilidade (P3): manifest/ícones/instalável + aria/foco/skip-link + SEO/OpenGraph.
 - Validar com usuários reais (recomendação do escopo antes de expandir).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-06 — Parte XVIII/XIX: PWA + acessibilidade + SEO (Agente C + revisão)
+------------------------------------------------------------------
+Trabalho do Agente C (feito 05/07, estava no working tree sem commitar); revisado
+e publicado agora.
+- PWA instalável: src/app/manifest.ts (/manifest.webmanifest), ícones PNG 192/512 +
+  SVG maskable/any + apple-icon.png em apps/web/public. display standalone, theme #0b1020.
+- SEO: metadata completa no layout (title template, description, keywords, canonical,
+  OpenGraph + Twitter card com og.png), viewport com themeColor/colorScheme, robots,
+  src/app/sitemap.ts (/sitemap.xml, só rotas públicas), src/lib/site.ts (SITE_URL
+  sobrescrevível por NEXT_PUBLIC_SITE_URL).
+- Acessibilidade: skip-link "Pular para o conteúdo", <main id=conteudo tabIndex=-1>,
+  <nav aria-label>, aria-label/expanded no sino de notificações, ícones aria-hidden,
+  :focus-visible e .sr-only no globals.css.
+VERIFICAÇÃO: typecheck web OK (após build regenerar .next; erros iniciais eram cache
+velho das rotas geradoras de ícone, já removidas) e `next build` de produção OK
+(14 rotas + /manifest.webmanifest + /sitemap.xml).
+==================================================================

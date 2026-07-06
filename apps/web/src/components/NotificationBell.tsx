@@ -51,12 +51,20 @@ export function NotificationBell() {
 
   return (
     <span className="bell-wrap">
-      <button className="bell-btn" onClick={() => setAberto((v) => !v)} aria-label="Notificações">
-        🔔
-        {naoLidas > 0 && <span className="bell-badge">{naoLidas > 9 ? '9+' : naoLidas}</span>}
+      <button
+        className="bell-btn"
+        onClick={() => setAberto((v) => !v)}
+        aria-haspopup="true"
+        aria-expanded={aberto}
+        aria-label={naoLidas > 0 ? `Notificações, ${naoLidas} não lidas` : 'Notificações'}
+      >
+        <span aria-hidden="true">🔔</span>
+        {naoLidas > 0 && (
+          <span className="bell-badge" aria-hidden="true">{naoLidas > 9 ? '9+' : naoLidas}</span>
+        )}
       </button>
       {aberto && (
-        <div className="bell-dropdown card">
+        <div className="bell-dropdown card" role="region" aria-label="Notificações">
           <div className="between" style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
             <strong>Notificações</strong>
             {naoLidas > 0 && <button className="btn btn-ghost btn-sm" onClick={marcarTodas}>marcar todas</button>}

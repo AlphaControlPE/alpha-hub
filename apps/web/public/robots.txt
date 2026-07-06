@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://alpha-hub-web.onrender.com/sitemap.xml

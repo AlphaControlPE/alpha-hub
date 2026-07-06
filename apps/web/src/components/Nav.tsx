@@ -9,9 +9,9 @@ export function Nav() {
 
   return (
     <header className="nav">
-      <div className="container nav-inner">
-        <Link href="/" className="brand">
-          <span className="dot" />
+      <nav className="container nav-inner" aria-label="Navegação principal">
+        <Link href="/" className="brand" aria-label="Alpha Hub — início">
+          <span className="dot" aria-hidden="true" />
           Alpha Hub
         </Link>
         <span className="chip" title="Núcleo gratuito, sem paywall">grátis para participar</span>
@@ -31,8 +31,8 @@ export function Nav() {
             <Link href="/nova" className="btn btn-primary btn-sm">+ Nova solicitação</Link>
             <NotificationBell />
             <span className="row" style={{ marginLeft: 6 }}>
-              <Link href="/perfil" title="Meu perfil">
-                <span className="avatar" style={{ width: 30, height: 30 }}>
+              <Link href="/perfil" aria-label={`Meu perfil — ${usuario.nome}`}>
+                <span className="avatar" style={{ width: 30, height: 30 }} aria-hidden="true">
                   {usuario.nome.charAt(0).toUpperCase()}
                 </span>
               </Link>
@@ -43,7 +43,7 @@ export function Nav() {
         {!carregando && !usuario && (
           <Link href="/login" className="btn btn-primary btn-sm">Entrar</Link>
         )}
-      </div>
+      </nav>
     </header>
   );
 }

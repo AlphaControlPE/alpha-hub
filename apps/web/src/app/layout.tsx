@@ -1,22 +1,81 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 import { Nav } from '@/components/Nav';
+import { SITE_URL } from '@/lib/site';
+
+const DESCRICAO =
+  'Publique solicitações, receba propostas e negocie no chat em tempo real. Grátis para participar, rigoroso para proteger.';
 
 export const metadata: Metadata = {
-  title: 'Alpha Hub — marketplace gratuito de solicitações e propostas',
-  description:
-    'Publique solicitações, receba propostas, negocie no chat. Grátis para participar, rigoroso para proteger.',
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'Alpha Hub',
+  title: {
+    default: 'Alpha Hub — marketplace gratuito de solicitações e propostas',
+    template: '%s · Alpha Hub',
+  },
+  description: DESCRICAO,
+  keywords: [
+    'marketplace',
+    'solicitações',
+    'propostas',
+    'orçamentos',
+    'serviços',
+    'freelancer',
+    'indicações',
+    'Brasil',
+    'gratuito',
+  ],
+  authors: [{ name: 'Alpha Hub' }],
+  creator: 'Alpha Hub',
+  category: 'business',
+  manifest: '/manifest.webmanifest',
+  alternates: { canonical: '/' },
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    shortcut: ['/icon.svg'],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Alpha Hub',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    url: '/',
+    siteName: 'Alpha Hub',
+    title: 'Alpha Hub — marketplace gratuito de solicitações e propostas',
+    description: DESCRICAO,
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Alpha Hub' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Alpha Hub — marketplace gratuito de solicitações e propostas',
+    description: DESCRICAO,
+    images: ['/og.png'],
+  },
+  robots: { index: true, follow: true },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0b1020',
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>
+        <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
         <AuthProvider>
           <Nav />
-          <main className="container" style={{ paddingTop: 8, paddingBottom: 40 }}>
+          <main id="conteudo" tabIndex={-1} className="container" style={{ paddingTop: 8, paddingBottom: 40 }}>
             {children}
           </main>
           <footer style={{ borderTop: '1px solid var(--border)', marginTop: 20 }}>
