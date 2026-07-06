@@ -408,3 +408,35 @@ rate-limit no login retorna 429 após 10 tentativas.
   (sempre por caminho absoluto). Registrado na memória (alpha-hub-cwd-vinculo).
   Para resolver de vez: abrir o Claude Code já dentro da pasta Alpha-Hub.
 ==================================================================
+
+==================================================================
+2026-07-06 — HANDOFF (fim de sessão; usuário vai abrir novo chat)
+==================================================================
+COMO CONTINUAR: abrir o Claude Code JÁ DENTRO de C:\Users\alpha\Desktop\Alpha-Hub
+(assim git/worktrees/agentes funcionam direto e a memória do projeto é a certa).
+A memória do Alpha Hub foi MOVIDA para a pasta de projeto correta
+(.claude/projects/C--Users-alpha-Desktop-Alpha-Hub/memory/).
+
+ESTADO ATUAL (tudo no ar, verificado):
+- Site:  https://alpha-hub-web.onrender.com   |  API: https://alpha-hub-api.onrender.com/api
+- Repo:  https://github.com/AlphaControlPE/alpha-hub  (branch main; git push => Render redeploya)
+- Partes implementadas: MVP + III, IV, VII, IX, X, XI, XII, XIII, XIV, XV, XX. 61/61 e2e.
+- P0 SEGURANÇA (live, commit 94372aa): rate-limit (throttler), login de banido bloqueado,
+  helmet, senha admin via env (ADMIN_SENHA no render.yaml, sync:false), credenciais demo
+  removidas da tela de login.
+- P1 BACKUP (live, 49b0b2d): scripts/backup-db.sh|.ps1 + restore-db.sh, GitHub Action diária
+  (.github/workflows/backup.yml — precisa do secret DATABASE_URL no GitHub), BACKUP.md com
+  plano p/ expiração do Postgres grátis (upgrade Render OU migrar p/ Neon).
+- P2 LEGAL (live, 32c13aa): páginas /termos e /privacidade (LGPD) + rodapé.
+
+AÇÕES DO USUÁRIO PENDENTES (fecham riscos/destravam features):
+1. Render: definir env ADMIN_SENHA (senha forte) no serviço alpha-hub-api => fecha o admin.
+2. GitHub: criar secret DATABASE_URL (External Database URL do Render) => liga o backup automático.
+3. Antes do Postgres grátis expirar: seguir BACKUP.md (upgrade ou Neon).
+
+A FAZER (próximo chat):
+- "Esqueci a senha": PRECISA de provedor de e-mail (sugestão Resend, grátis) + API key do
+  usuário. NÃO shipar de fachada. Depois da chave: fluxo esqueci->email->redefinir completo.
+- PWA + acessibilidade (P3): manifest/ícones/instalável + aria/foco/skip-link + SEO/OpenGraph.
+- Validar com usuários reais (recomendação do escopo antes de expandir).
+==================================================================
