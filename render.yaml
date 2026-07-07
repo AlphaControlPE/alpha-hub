@@ -48,6 +48,15 @@ services:
       # "Alpha Hub <onboarding@resend.dev>" (já é o default do código).
       - key: RESEND_FROM
         sync: false
+      # Pagamento real de planos via Mercado Pago (Pix/cartão). SEM a chave o
+      # checkout fica DESLIGADO (o modo simulado continua para demonstração).
+      # Crie a aplicação em https://mercadopago.com.br/developers e cole o
+      # Access Token de PRODUÇÃO (use o de TESTE primeiro para validar).
+      - key: MP_ACCESS_TOKEN
+        sync: false
+      # URL pública da API — usada no notification_url do webhook do MP.
+      - key: API_PUBLIC_URL
+        value: https://alpha-hub-api.onrender.com
 
   # ---------- Web (Next.js) ----------
   - type: web

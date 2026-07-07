@@ -655,3 +655,53 @@ ATIVAÇÃO (ação do usuário, quando quiser ligar):
 3. Pronto: o link "Esqueci minha senha" passa a aparecer no login sozinho.
 (Opcional: verificar domínio próprio no Resend e setar RESEND_FROM.)
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-07 — Sessão 15: Pagamento REAL de planos — Mercado Pago (Pix/cartão)
+------------------------------------------------------------------
+PEDIDO DO USUÁRIO: gateway de pagamento Pix/cartão; escolheu Mercado Pago.
+LIMITE HONESTO: NÃO posso criar a conta MP nem gerar chaves (dados financeiros
+são do usuário). Padrão Resend repetido: integração completa GATED por
+MP_ACCESS_TOKEN — sem a chave, o checkout fica desligado e o modo simulado
+continua para demonstração. ESCOPO v1: pagamento real só dos PLANOS (receita
+da plataforma). O escrow dos CONTRATOS segue SIMULADO — split marketplace no
+MP exige credenciamento próprio (fica como camada futura, fiel ao escopo).
+
+BACKEND:
+- Migração 20260707102012_pagamento_mercadopago: StatusAssinatura ganha
+  PENDENTE; Assinatura ganha preferenciaId e pagamentoExternoId (idempotência).
+- common/pagamentos/mercadopago.service.ts: Checkout Pro via REST (fetch, sem
+  SDK). criarPreferencia (item BRL, external_reference=assinatura.id,
+  back_urls /planos?pagamento=..., notification_url API_PUBLIC_URL/api/webhooks/
+  mercadopago, statement_descriptor ALPHA HUB) e buscarPagamento. Em
+  NODE_ENV=test nada sai pra rede (preference e pagamentos simulados em memória).
+- MonetizacaoService: GET /planos/recursos {pagamentoReal}; POST /planos/:id/
+  checkout (503 sem chave; 400 p/ plano grátis; 409 se já ativa; cria assinatura
+  PENDENTE e invalida pendentes anteriores; devolve URL do checkout); ANTI-BYPASS:
+  com MP ligado, plano pago NÃO pode ser ativado pelo caminho simulado (400).
+- Webhook POST /webhooks/mercadopago: NUNCA confia no corpo — busca o pagamento
+  na API do MP com a nossa credencial; valida external_reference e VALOR
+  (>= preço do plano); ativa (fimEm +30d se MENSAL; concede selo verificado se
+  o plano tiver o recurso); idempotente; responde sempre 2xx pro MP não
+  re-tentar à toa. Valor divergente é auditado e NÃO ativa.
+
+FRONTEND (/planos):
+- Botão vira "Assinar com Pix/cartão" quando pagamentoReal (redireciona ao MP);
+  texto do hero muda de "simulado" para "processado pelo Mercado Pago".
+- Retorno do checkout (?pagamento=sucesso|pendente|falha) vira banner.
+- "Minhas assinaturas": badge "aguardando pagamento" (PENDENTE) + método.
+
+VERIFICAÇÃO: e2e 84/84 (11 suítes; novo pagamentos.e2e-spec com 10 testes:
+gate 503, demo preservada sem chave, anti-bypass 400 com chave, checkout grátis
+400, checkout cria PENDENTE + preference com valor certo, webhook valor
+divergente NÃO ativa, aprovado ativa, idempotente, desconhecido sem ação,
+409 se já ativa). Builds API e web VERDES.
+
+ATIVAÇÃO (ação do usuário, quando quiser ligar):
+1. Conta em https://mercadopago.com.br/developers -> Suas integrações ->
+   Criar aplicação (Checkout Pro).
+2. Copiar o Access Token de TESTE -> Render -> alpha-hub-api -> Environment ->
+   MP_ACCESS_TOKEN. Testar um pagamento com cartão de teste do MP.
+3. Quando validar: trocar pelo Access Token de PRODUÇÃO. Pronto — o botão
+   "Assinar com Pix/cartão" aparece sozinho em /planos.
+==================================================================

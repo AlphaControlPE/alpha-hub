@@ -185,7 +185,8 @@ export interface Plano {
 
 export interface Assinatura {
   id: string;
-  status: 'ATIVA' | 'CANCELADA';
+  status: 'PENDENTE' | 'ATIVA' | 'CANCELADA';
+  metodo?: string;
   inicioEm: string;
   fimEm: string | null;
   plano: Plano;

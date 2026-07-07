@@ -17,6 +17,7 @@ export default function PlanosPage() {
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [minhas, setMinhas] = useState<Assinatura[]>([]);
   const [msg, setMsg] = useState('');
+  const [pagamentoReal, setPagamentoReal] = useState(false);
 
   const carregar = useCallback(async () => {
     const p = await api<Plano[]>('/planos');
@@ -30,12 +31,34 @@ export default function PlanosPage() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Pagamento real (Pix/cartão) só é oferecido se estiver habilitado no servidor.
+  useEffect(() => {
+    api<{ pagamentoReal: boolean }>('/planos/recursos')
+      .then((r) => setPagamentoReal(r.pagamentoReal))
+      .catch(() => {});
+  }, []);
+
+  // Retorno do Checkout Pro (?pagamento=sucesso|pendente|falha).
+  useEffect(() => {
+    const st = new URLSearchParams(window.location.search).get('pagamento');
+    if (st === 'sucesso') setMsg('Pagamento aprovado! Sua assinatura será ativada em instantes.');
+    else if (st === 'pendente') setMsg('Pagamento em processamento — ativamos assim que for confirmado.');
+    else if (st === 'falha') setMsg('O pagamento não foi concluído. Você pode tentar de novo quando quiser.');
+    if (st) window.history.replaceState(null, '', '/planos');
+  }, []);
+
   const ativaDoPlano = (planoId: string) => minhas.find((a) => a.plano.id === planoId && a.status === 'ATIVA');
 
   async function assinar(p: Plano) {
     if (!usuario) { window.location.href = '/login'; return; }
     setMsg('');
     try {
+      if (pagamentoReal && p.preco > 0) {
+        // Pagamento real: cria o checkout e leva ao Mercado Pago (Pix/cartão).
+        const r = await api<{ url: string }>(`/planos/${p.id}/checkout`, { method: 'POST' });
+        window.location.href = r.url;
+        return;
+      }
       await api(`/planos/${p.id}/assinar`, { method: 'POST' });
       setMsg(`Assinatura de "${p.nome}" ativada (pagamento simulado).`);
       await carregar();
@@ -56,8 +79,10 @@ export default function PlanosPage() {
         <h1 className="h1">Planos e serviços opcionais</h1>
         <p className="muted" style={{ maxWidth: 640 }}>
           Publicar, propor, conversar, indicar e avaliar é <strong>sempre gratuito</strong>.
-          Estes planos são camadas opcionais — nunca condicionam sua participação. Pagamento é
-          simulado nesta demonstração (a plataforma não movimenta dinheiro real).
+          Estes planos são camadas opcionais — nunca condicionam sua participação.{' '}
+          {pagamentoReal
+            ? 'Pagamento processado com segurança pelo Mercado Pago (Pix ou cartão).'
+            : 'Pagamento é simulado nesta demonstração (a plataforma não movimenta dinheiro real).'}
         </p>
       </section>
 
@@ -88,7 +113,7 @@ export default function PlanosPage() {
                 </div>
               ) : (
                 <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => assinar(p)}>
-                  Assinar
+                  {pagamentoReal && p.preco > 0 ? 'Assinar com Pix/cartão' : 'Assinar'}
                 </button>
               )}
             </div>
@@ -102,8 +127,15 @@ export default function PlanosPage() {
           <div className="card">
             {minhas.map((a) => (
               <div key={a.id} className="sol-item between">
-                <span><strong>{a.plano.nome}</strong> <span className="muted" style={{ fontSize: 12 }}>· {preco(a.plano)}</span></span>
-                <span className={`badge ${a.status === 'ATIVA' ? 'ACEITA' : 'CANCELADA'}`}>{a.status}</span>
+                <span>
+                  <strong>{a.plano.nome}</strong>{' '}
+                  <span className="muted" style={{ fontSize: 12 }}>
+                    · {preco(a.plano)}{a.metodo === 'mercadopago' ? ' · Mercado Pago' : ''}
+                  </span>
+                </span>
+                <span className={`badge ${a.status === 'ATIVA' ? 'ACEITA' : a.status === 'PENDENTE' ? 'EM_NEGOCIACAO' : 'CANCELADA'}`}>
+                  {a.status === 'PENDENTE' ? 'aguardando pagamento' : a.status}
+                </span>
               </div>
             ))}
           </div>

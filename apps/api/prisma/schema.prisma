@@ -600,6 +600,7 @@ enum Periodicidade {
 }
 
 enum StatusAssinatura {
+  PENDENTE // aguardando confirmação de pagamento real (Mercado Pago)
   ATIVA
   CANCELADA
 }
@@ -626,11 +627,15 @@ model Plano {
 model Assinatura {
   id           String           @id @default(cuid())
   status       StatusAssinatura @default(ATIVA)
-  metodo       String           @default("simulado") // sem pagamento real
+  metodo       String           @default("simulado") // "simulado" | "mercadopago"
   inicioEm     DateTime         @default(now())
   fimEm        DateTime?
   criadoEm     DateTime         @default(now())
   atualizadoEm DateTime         @updatedAt
+
+  // Pagamento real (Mercado Pago Checkout Pro)
+  preferenciaId      String? // id da preference criada no checkout
+  pagamentoExternoId String? // id do pagamento aprovado no MP (idempotência)
 
   userId       String
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
