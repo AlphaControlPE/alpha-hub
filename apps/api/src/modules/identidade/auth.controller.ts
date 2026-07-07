@@ -4,7 +4,9 @@ import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
+import { EsqueciSenhaDto } from './dto/esqueci-senha.dto';
 import { LoginDto } from './dto/login.dto';
+import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsuarioAutenticado } from './jwt.strategy';
@@ -41,5 +43,26 @@ export class AuthController {
   @ApiOperation({ summary: 'Usuário autenticado atual' })
   eu(@CurrentUser() user: UsuarioAutenticado) {
     return user;
+  }
+
+  @Get('recursos')
+  @ApiOperation({ summary: 'Recursos opcionais habilitados nesta instalação' })
+  recursos() {
+    return this.auth.recursos();
+  }
+
+  // Mais rígido que o login: redefinição é alvo clássico de abuso.
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('esqueci')
+  @ApiOperation({ summary: 'Solicita redefinição de senha por e-mail (resposta genérica)' })
+  esqueci(@Body() dto: EsqueciSenhaDto, @Req() req: Request) {
+    return this.auth.solicitarRedefinicao(dto, origem(req));
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('redefinir')
+  @ApiOperation({ summary: 'Conclui a redefinição de senha com o token do e-mail' })
+  redefinir(@Body() dto: RedefinirSenhaDto, @Req() req: Request) {
+    return this.auth.redefinirSenha(dto, origem(req));
   }
 }

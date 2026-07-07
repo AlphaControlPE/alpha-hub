@@ -64,8 +64,25 @@ model User {
   // Perfil (Parte IV)
   portfolio              PortfolioItem[]
   servicos               ServicoOferecido[]
+  // Redefinição de senha
+  tokensRedefinicao      TokenRedefinicaoSenha[]
 
   @@map("users")
+}
+
+// Token de redefinição de senha ("esqueci a senha").
+// Guarda apenas o HASH (sha-256) do token — o token cru vai só no e-mail.
+model TokenRedefinicaoSenha {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("tokens_redefinicao_senha")
 }
 
 enum PapelSistema {

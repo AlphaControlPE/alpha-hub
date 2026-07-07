@@ -606,3 +606,52 @@ OUTRO sistema (resposta com envelope success/data/error/meta = Recy/Alpha
 Control?). NÃO foi morto — não é do Alpha Hub. Se for rodar a API local do
 Alpha Hub, liberar a 3001 antes (ou conferir quem é o processo).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-07 — Sessão 14: "Esqueci a senha" REAL (gated por RESEND_API_KEY)
+------------------------------------------------------------------
+(2ª metade do "os dois". Decisão antiga respeitada: NÃO shipar de fachada —
+o recurso fica DESLIGADO e invisível até existir chave de e-mail; nada finge
+funcionar.)
+
+BACKEND:
+- Migração 20260707100237_esqueci_senha: model TokenRedefinicaoSenha
+  (tokenHash sha-256 ÚNICO — o token cru vai só no e-mail; expiraEm 1h;
+  usadoEm; cascade delete com o usuário).
+- common/email/email.service.ts: envio via API do Resend com fetch nativo
+  (sem SDK). `disponivel` = existe RESEND_API_KEY. Em NODE_ENV=test não sai
+  nada pra rede (último e-mail inspecionável pelos testes). Remetente:
+  RESEND_FROM ou "Alpha Hub <onboarding@resend.dev>".
+- AuthService: solicitarRedefinicao (503 se desligado; resposta SEMPRE genérica
+  — anti-enumeração de e-mail; token randomBytes(32); pedido novo invalida
+  anteriores; falha de envio não revela conta e é auditada) e redefinirSenha
+  (valida não-usado+não-expirado, troca senha, marca usado e revoga pendentes
+  em transação). Tudo auditado.
+- Endpoints: GET /auth/recursos (o front só mostra o que funciona),
+  POST /auth/esqueci (throttle 5/min — mais rígido que login),
+  POST /auth/redefinir (10/min).
+
+FRONTEND:
+- /login: link "Esqueci minha senha" SÓ aparece se /auth/recursos disser que
+  o recurso está ligado.
+- /esqueci: form de e-mail -> mensagem genérica (mesma para qualquer e-mail);
+  503 vira aviso honesto de recurso desabilitado.
+- /redefinir?token=: nova senha + confirmação (useSearchParams com Suspense);
+  sem token -> CTA para pedir novo link. Ambas noindex.
+
+VERIFICAÇÃO:
+- e2e: 74/74 PASSARAM (10 suítes; novo esqueci-senha.e2e-spec com 10 testes:
+  gate 503 sem chave, recursos liga/desliga, anti-enumeração (e-mail
+  desconhecido não envia nada), fluxo completo com token extraído do e-mail
+  simulado, senha nova funciona/antiga falha, uso único, token lixo=400,
+  senha curta=400, token expirado=400).
+- Build API (nest) e web (next, 23 rotas) VERDES.
+- CORREÇÃO no próprio teste: token expirado usava valor fixo e colidia com
+  runs anteriores (unique tokenHash) — trocado por aleatório.
+
+ATIVAÇÃO (ação do usuário, quando quiser ligar):
+1. Criar conta grátis em https://resend.com -> API Keys -> criar chave.
+2. Render -> serviço alpha-hub-api -> Environment -> RESEND_API_KEY = chave.
+3. Pronto: o link "Esqueci minha senha" passa a aparecer no login sozinho.
+(Opcional: verificar domínio próprio no Resend e setar RESEND_FROM.)
+==================================================================

@@ -39,6 +39,15 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
+      # "Esqueci a senha" por e-mail (Resend). SEM a chave o recurso fica
+      # DESLIGADO (link não aparece no login; endpoint responde 503).
+      # Crie grátis em https://resend.com e cole a API key no painel.
+      - key: RESEND_API_KEY
+        sync: false
+      # Remetente opcional; sem domínio verificado use o padrão
+      # "Alpha Hub <onboarding@resend.dev>" (já é o default do código).
+      - key: RESEND_FROM
+        sync: false
 
   # ---------- Web (Next.js) ----------
   - type: web

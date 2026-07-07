@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
@@ -13,6 +15,14 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [temEsqueciSenha, setTemEsqueciSenha] = useState(false);
+
+  // O link "esqueci a senha" só aparece se o recurso estiver habilitado no servidor.
+  useEffect(() => {
+    api<{ esqueciSenha: boolean }>('/auth/recursos')
+      .then((r) => setTemEsqueciSenha(r.esqueciSenha))
+      .catch(() => {});
+  }, []);
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -59,6 +69,14 @@ export default function LoginPage() {
           <button className="btn btn-primary" style={{ width: '100%' }} disabled={enviando}>
             {enviando ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta grátis'}
           </button>
+
+          {modo === 'entrar' && temEsqueciSenha && (
+            <p style={{ textAlign: 'center', marginTop: 14, marginBottom: 0 }}>
+              <Link href="/esqueci" className="muted" style={{ fontSize: 13, textDecoration: 'underline' }}>
+                Esqueci minha senha
+              </Link>
+            </p>
+          )}
         </form>
       </div>
     </div>
