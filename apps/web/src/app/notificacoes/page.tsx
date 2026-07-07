@@ -54,7 +54,13 @@ export default function NotificacoesPage() {
 
       <div className="card" style={{ margin: '16px 0' }}>
         {itens.length === 0 ? (
-          <div className="empty">Sem notificações ainda.</div>
+          <div className="empty">
+            <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>🔔</div>
+            <strong>Tudo em dia</strong>
+            <p className="muted" style={{ margin: '6px 0 0', fontSize: 14 }}>
+              Você será avisado aqui sobre propostas, mensagens, contratos e indicações.
+            </p>
+          </div>
         ) : (
           itens.map((n) => (
             <button key={n.id} onClick={() => abrir(n)} className="sol-item" style={{ width: '100%', textAlign: 'left', background: n.lida ? 'transparent' : 'var(--surface-2)', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>

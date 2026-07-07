@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api, centavosParaReal } from '@/lib/api';
 import { Paginated, Solicitacao } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
+import { SkeletonList } from '@/components/Skeleton';
 
 const CATEGORIAS = ['', 'design', 'desenvolvimento', 'marketing', 'redação', 'consultoria'];
 
@@ -109,9 +110,20 @@ export default function HomePage() {
 
       <div className="card">
         {carregando ? (
-          <div className="empty">Carregando…</div>
+          <SkeletonList itens={5} />
         ) : dados.length === 0 ? (
-          <div className="empty">Nenhuma solicitação encontrada. {usuario && <Link href="/nova" style={{ color: 'var(--primary)' }}>Publique a primeira →</Link>}</div>
+          <div className="empty">
+            <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>🔎</div>
+            <strong>Nenhuma solicitação encontrada</strong>
+            <p className="muted" style={{ margin: '6px 0 14px', fontSize: 14 }}>
+              {q || categoria ? 'Tente ajustar a busca ou a categoria.' : 'Seja quem abre o mercado por aqui.'}
+            </p>
+            {usuario ? (
+              <Link href="/nova" className="btn btn-primary btn-sm">+ Publicar solicitação</Link>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm">Criar conta grátis</Link>
+            )}
+          </div>
         ) : (
           dados.map((s) => (
             <Link key={s.id} href={`/solicitacoes/${s.id}`} className="sol-item">

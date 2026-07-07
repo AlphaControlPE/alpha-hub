@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Insight } from '@/lib/types';
+import { Skeleton } from '@/components/Skeleton';
 
 export default function ComunidadePage() {
   const { usuario } = useAuth();
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [buscando, setBuscando] = useState(true);
   const [ordenar, setOrdenar] = useState<'top' | 'recentes'>('top');
   const [criando, setCriando] = useState(false);
   const [titulo, setTitulo] = useState('');
@@ -17,8 +19,12 @@ export default function ComunidadePage() {
   const [erro, setErro] = useState('');
 
   const carregar = useCallback(async () => {
-    const r = await api<Insight[]>(`/insights?ordenar=${ordenar}`);
-    setInsights(r);
+    try {
+      const r = await api<Insight[]>(`/insights?ordenar=${ordenar}`);
+      setInsights(r);
+    } finally {
+      setBuscando(false);
+    }
   }, [ordenar]);
 
   useEffect(() => { carregar(); }, [carregar]);
@@ -83,7 +89,34 @@ export default function ComunidadePage() {
       )}
 
       <div className="stack">
-        {insights.length === 0 && <div className="card card-pad empty">Nenhum insight ainda.</div>}
+        {buscando && (
+          <div role="status" aria-label="Carregando insights">
+            {[0, 1, 2].map((k) => (
+              <div key={k} className="card card-pad" style={{ marginBottom: 12 }} aria-hidden="true">
+                <div className="between">
+                  <Skeleton w="40%" h={17} />
+                  <Skeleton w={70} h={20} style={{ borderRadius: 999 }} />
+                </div>
+                <Skeleton w="90%" style={{ margin: '12px 0 6px' }} />
+                <Skeleton w="60%" />
+              </div>
+            ))}
+          </div>
+        )}
+        {!buscando && insights.length === 0 && (
+          <div className="card card-pad empty">
+            <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>💡</div>
+            <strong>Nenhum insight ainda</strong>
+            <p className="muted" style={{ margin: '6px 0 14px', fontSize: 14 }}>
+              Compartilhe o que você aprendeu na prática — a comunidade vota no que ajuda.
+            </p>
+            {usuario ? (
+              <button className="btn btn-primary btn-sm" onClick={() => setCriando(true)}>+ Publicar o primeiro insight</button>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm">Criar conta grátis</Link>
+            )}
+          </div>
+        )}
         {insights.map((i) => (
           <div key={i.id} className="card card-pad">
             <div className="between">

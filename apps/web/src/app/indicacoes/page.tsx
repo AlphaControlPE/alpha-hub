@@ -101,7 +101,15 @@ export default function IndicacoesPage() {
       )}
 
       <div className="stack">
-        {itens.length === 0 && <div className="card card-pad empty">Nenhuma indicação ainda.</div>}
+        {itens.length === 0 && (
+          <div className="card card-pad empty">
+            <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>🤝</div>
+            <strong>Nenhuma indicação ainda</strong>
+            <p className="muted" style={{ margin: '6px 0 0', fontSize: 14 }}>
+              Indique alguém com consentimento — o contato fica protegido até a reserva.
+            </p>
+          </div>
+        )}
         {itens.map((i) => {
           const minha = i.indicador.id === usuario?.id;
           return (

@@ -574,3 +574,35 @@ VERIFICAÇÃO (dupla):
 LIMITAÇÃO CONHECIDA: o SW só se registra em produção (Render). Em localhost dev
 não há SW — comportamento intencional.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-06 — Sessão 13: Polimento de UX (404/erro, skeletons, estados vazios)
+------------------------------------------------------------------
+(1ª metade do "os dois" autorizado pelo usuário; 2ª metade = esqueci a senha.)
+
+IMPLEMENTADO (frontend):
+- not-found.tsx: 404 com marca ("404" em gradiente, CTAs p/ home e comunidade),
+  dentro do layout (nav/rodapé preservados).
+- error.tsx: error boundary com marca, botão "Tentar de novo" (reset) + volta à
+  home; mostra código digest quando existir.
+- Skeletons (shimmer): classe .skeleton no globals.css (respeita
+  prefers-reduced-motion via kill switch já existente) + componentes Skeleton/
+  SkeletonList (role=status p/ leitores de tela). Aplicados: home (lista),
+  /solicitacoes/[id] (detalhe), /conversas, /comunidade.
+- BUG DE UX CORRIGIDO de quebra: /conversas e /comunidade mostravam o estado
+  VAZIO enquanto carregavam (mentira momentânea); agora têm estado buscando.
+- Estados vazios com ícone + explicação + CTA: home (busca vs 1ª publicação,
+  logado vs visitante), conversas (→ ver solicitações), comunidade (→ publicar
+  1º insight), notificações ("Tudo em dia"), contratos (→ ver solicitações),
+  indicações.
+
+VERIFICAÇÃO: `next build` produção VERDE (21 rotas). Em produção local
+(next start): 404 renderiza completa (snapshot de acessibilidade: heading,
+CTAs, nav, rodapé); estado vazio da home confirmado (variante visitante com
+"Criar conta grátis"). Skeletons são caminho trivial (carregando ? skeleton).
+
+NOTA IMPORTANTE DE AMBIENTE: no fim da sessão a porta 3001 estava ocupada por
+OUTRO sistema (resposta com envelope success/data/error/meta = Recy/Alpha
+Control?). NÃO foi morto — não é do Alpha Hub. Se for rodar a API local do
+Alpha Hub, liberar a 3001 antes (ou conferir quem é o processo).
+==================================================================

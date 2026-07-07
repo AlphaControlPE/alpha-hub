@@ -7,6 +7,7 @@ import { api, centavosParaReal } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Contrato, Proposta, Solicitacao } from '@/lib/types';
 import { Chat } from '@/components/Chat';
+import { Skeleton } from '@/components/Skeleton';
 import { Avaliar } from '@/components/Avaliar';
 import { ReputacaoBadge } from '@/components/ReputacaoBadge';
 import { ReportButton } from '@/components/ReportButton';
@@ -55,7 +56,27 @@ export default function DetalheSolicitacao() {
     carregar();
   }, [carregar]);
 
-  if (!sol) return <div className="empty">Carregando…</div>;
+  if (!sol) {
+    return (
+      <div role="status" aria-label="Carregando solicitação">
+        <div className="card card-pad" style={{ marginTop: 12 }} aria-hidden="true">
+          <div className="between">
+            <Skeleton w="55%" h={28} />
+            <Skeleton w={80} h={22} style={{ borderRadius: 999 }} />
+          </div>
+          <div className="row" style={{ margin: '14px 0' }}>
+            <Skeleton w={70} h={20} style={{ borderRadius: 999 }} />
+            <Skeleton w={130} h={20} style={{ borderRadius: 999 }} />
+            <Skeleton w={110} h={20} style={{ borderRadius: 999 }} />
+          </div>
+          <Skeleton w="100%" />
+          <Skeleton w="92%" style={{ marginTop: 8 }} />
+          <Skeleton w="70%" style={{ marginTop: 8 }} />
+        </div>
+        <span className="sr-only">Carregando…</span>
+      </div>
+    );
+  }
 
   const ehAutor = usuario?.id === sol.autor.id;
   const minhaProposta = propostas.find((p) => p.autor.id === usuario?.id);

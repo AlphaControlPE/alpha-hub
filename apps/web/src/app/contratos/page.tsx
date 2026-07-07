@@ -28,8 +28,12 @@ export default function ContratosPage() {
       </p>
       {contratos.length === 0 ? (
         <div className="card card-pad empty">
-          Nenhum contrato ainda. Aceite uma proposta e formalize o acordo em{' '}
-          <Link href="/" style={{ color: 'var(--primary)' }}>solicitações</Link>.
+          <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>📝</div>
+          <strong>Nenhum contrato ainda</strong>
+          <p className="muted" style={{ margin: '6px 0 14px', fontSize: 14 }}>
+            Quando uma proposta for aceita, formalize o acordo com escopo, marcos e pagamento protegido.
+          </p>
+          <Link href="/" className="btn btn-primary btn-sm">Ver solicitações</Link>
         </div>
       ) : (
         <div className="stack">
