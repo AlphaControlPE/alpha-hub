@@ -459,3 +459,81 @@ VERIFICAÇÃO: typecheck web OK (após build regenerar .next; erros iniciais era
 velho das rotas geradoras de ícone, já removidas) e `next build` de produção OK
 (14 rotas + /manifest.webmanifest + /sitemap.xml).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-06 — Sessão: reconciliação + verificação do P3 (já estava live)
+------------------------------------------------------------------
+CONTEXTO: retomei a sessão para "começar pelo mais coerente" e escolhi o P3
+(PWA + acessibilidade + SEO). Ao final descobri, pelo git, que o P3 JÁ ESTAVA
+COMMITADO em 4300b91 e no origin/main — portanto JÁ PUBLICADO no Render. Reimplementei
+por engano (os PNGs saíram byte-idênticos por serem gerados do mesmo SVG da marca, então
+`git status` não acusou diff em nenhum arquivo do P3).
+
+VALOR REAL DESTA SESSÃO (validação honesta de que o P3 funciona mesmo):
+- `next build` de produção: VERDE (20 rotas; /manifest.webmanifest e /sitemap.xml estáticos).
+- `next start` (produção local): og:image e canonical resolvem para
+  https://alpha-hub-web.onrender.com (o localhost visto em `next dev` é só quirk do modo dev).
+- Todos os assets 200 com content-type correto: /og.png, /apple-icon.png, /icon-192.png,
+  /icon-512.png, /icon.svg, /icon-maskable.svg, /sitemap.xml, /robots.txt.
+- Acessibilidade conferida no DOM: skip-link "Pular para o conteúdo", <main id=conteudo
+  tabindex=-1>, <nav aria-label="Navegação principal">, aria no sino/avatar.
+- LIVE no Render conferido via curl: /manifest.webmanifest responde e og:image aponta
+  para a URL de produção. => P3 CONFIRMADO no ar.
+
+MUDANÇA NOVA (única com diff): render.yaml ganhou NEXT_PUBLIC_SITE_URL=
+https://alpha-hub-web.onrender.com no serviço web — torna a URL canônica explícita
+(metadataBase/SEO/sitemap/canonical) em vez de depender só do fallback no código.
+
+NOTA/APRENDIZADO: sempre conferir `git status`/`git log` do arquivo ANTES de reimplementar
+uma "pendência" do handoff — o handoff (P3 a fazer) estava desatualizado; o P3 já fora
+entregue em 4300b91.
+==================================================================
+
+------------------------------------------------------------------
+2026-07-06 — Sessão 11: SEO por página + JSON-LD + sitemap dinâmico
+------------------------------------------------------------------
+DECISÃO (escolha do usuário entre 4 opções): estender o SEO já validado com
+metadata única POR PÁGINA + dados estruturados schema.org (maior descoberta e
+compartilhamento das páginas públicas, principalmente as dinâmicas).
+
+IMPLEMENTADO (frontend Next.js):
+- src/lib/seo.ts: buildMetadata() (canonical+OpenGraph+Twitter consistentes,
+  og:image padrão /og.png reafirmado — o merge do Next SUBSTITUI o objeto
+  openGraph inteiro, não mescla), truncate() p/ descriptions, fetchPublic()
+  (fetch server-side tolerante a falha, revalidate 600s, nunca lança).
+- Metadata por página via layout.tsx (páginas são 'use client', não exportam
+  generateMetadata):
+  · Estáticas: /planos, /login, /comunidade (+ /termos e /privacidade enriquecidas).
+  · Dinâmicas com generateMetadata buscando a entidade real na API:
+    /solicitacoes/[id] (título+descrição da solicitação), /usuarios/[id]
+    (nome+bio do perfil), /comunidade/[id] (título+conteúdo do insight).
+  · Privadas (8): admin, perfil, notificacoes, conversas, contratos, indicacoes,
+    organizacoes, nova => title de aba + robots noindex,nofollow.
+- JSON-LD (schema.org): raiz com Organization + WebSite + SearchAction
+  (target /?q={search_term_string}); /usuarios/[id] com ProfilePage + Person
+  (knowsAbout dos serviços).
+- Busca deep-linkável na home: lê ?q=/?categoria= ao montar e sincroniza a URL
+  (history.replaceState) — torna o SearchAction verdadeiro e buscas compartilháveis.
+- Sitemap dinâmico: além das 6 rotas estáticas, inclui solicitações (limit=100,
+  priority .8) e insights (priority .5) buscados da API; se a API estiver fora,
+  degrada para as estáticas sem falhar (comprovado na prática durante a sessão).
+- render.yaml: NEXT_PUBLIC_SITE_URL explícito no serviço web (canonical/metadataBase).
+
+BUGS ENCONTRADOS E CORRIGIDOS DURANTE A VERIFICAÇÃO:
+- og:image sumia nas páginas com openGraph próprio (merge substitui o objeto) =>
+  buildMetadata reafirma images:['/og.png'] por padrão.
+- /comunidade/[id] perdia o sufixo "· Alpha Hub" => layout intermediário de
+  /comunidade passou a declarar title como objeto {default, template} (string
+  simples zera o template herdado da raiz).
+
+VERIFICAÇÃO (dev + build de produção, com Postgres portátil + API locais):
+- Títulos/canonicals únicos conferidos por curl em 8 páginas, incluindo entidades
+  reais ("Preciso de uma logo para minha startup · Alpha Hub" etc.).
+- JSON-LD presente: Organization/WebSite/SearchAction na raiz; ProfilePage/Person
+  no perfil. noindex nas 8 privadas; index,follow nas públicas.
+- /?q=logo semeia o campo de busca e filtra (15 resultados no seed local).
+- Sitemap com 63 URLs (6 estáticas + dinâmicas) e URLs de produção.
+- `next build` de produção VERDE (20 rotas).
+NOTA DE AMBIENTE: rodar `next build` com o `next dev` de pé derruba o dev server
+(compartilham .next) — reiniciar o dev depois do build.
+==================================================================

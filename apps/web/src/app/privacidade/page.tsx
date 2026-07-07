@@ -1,4 +1,10 @@
-export const metadata = { title: 'Política de Privacidade — Alpha Hub' };
+import { buildMetadata } from '@/lib/seo';
+
+export const metadata = buildMetadata({
+  title: 'Política de Privacidade',
+  description: 'Como o Alpha Hub trata seus dados pessoais conforme a LGPD: coleta, uso, direitos do titular e contato.',
+  path: '/privacidade',
+});
 
 export default function PrivacidadePage() {
   return (

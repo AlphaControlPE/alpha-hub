@@ -17,13 +17,25 @@ export default function HomePage() {
   const [carregando, setCarregando] = useState(true);
   const [recomendadas, setRecomendadas] = useState<(Solicitacao & { motivos: string[] })[]>([]);
 
+  // Busca deep-linkável: semeia estado a partir de ?q=/?categoria= ao montar.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const q0 = sp.get('q');
+    const c0 = sp.get('categoria');
+    if (q0) setQ(q0);
+    if (c0 && CATEGORIAS.includes(c0)) setCategoria(c0);
+  }, []);
+
   const carregar = useCallback(async () => {
     setCarregando(true);
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (categoria) params.set('categoria', categoria);
+    // Mantém a URL sincronizada com a busca (compartilhável, sem recarregar).
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `/?${qs}` : '/');
     try {
-      const r = await api<Paginated<Solicitacao>>(`/solicitacoes?${params.toString()}`);
+      const r = await api<Paginated<Solicitacao>>(`/solicitacoes?${qs}`);
       setDados(r.dados);
       setTotal(r.meta.total);
     } finally {

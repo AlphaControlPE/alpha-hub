@@ -1,4 +1,10 @@
-export const metadata = { title: 'Termos de Uso — Alpha Hub' };
+import { buildMetadata } from '@/lib/seo';
+
+export const metadata = buildMetadata({
+  title: 'Termos de Uso',
+  description: 'Termos de Uso do Alpha Hub: regras de participação, responsabilidades e limites do marketplace gratuito.',
+  path: '/termos',
+});
 
 export default function TermosPage() {
   return (

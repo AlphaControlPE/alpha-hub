@@ -51,3 +51,6 @@ services:
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://alpha-hub-api.onrender.com
+      # URL pública canônica (metadataBase p/ SEO/OpenGraph, sitemap, canonical).
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://alpha-hub-web.onrender.com
