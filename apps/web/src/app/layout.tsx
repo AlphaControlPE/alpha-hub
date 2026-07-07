@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 import { Nav } from '@/components/Nav';
+import { SwRegister } from '@/components/SwRegister';
 import { SITE_URL } from '@/lib/site';
 
 const DESCRICAO =
@@ -108,6 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
+        <SwRegister />
         <AuthProvider>
           <Nav />
           <main id="conteudo" tabIndex={-1} className="container" style={{ paddingTop: 8, paddingBottom: 40 }}>

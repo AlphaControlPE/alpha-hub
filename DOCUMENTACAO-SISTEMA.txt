@@ -537,3 +537,40 @@ VERIFICAÇÃO (dev + build de produção, com Postgres portátil + API locais):
 NOTA DE AMBIENTE: rodar `next build` com o `next dev` de pé derruba o dev server
 (compartilham .next) — reiniciar o dev depois do build.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-06 — Sessão 12: PWA offline (service worker + página offline)
+------------------------------------------------------------------
+DECISÃO: completar a história de PWA (site já era instalável desde 4300b91) com
+funcionamento offline. Estratégias escolhidas para NUNCA servir dado velho:
+- Páginas (navegação): network-first -> cache -> /offline (cache só sem rede).
+- Assets estáticos (/_next/static, imagens, fontes): stale-while-revalidate
+  (são hashados; cache é seguro e acelera).
+- API/WebSocket/cross-origin: NUNCA interceptados (auth, tempo real, CORS).
+
+IMPLEMENTADO:
+- apps/web/public/sw.js: service worker versionado (ah-v1; trocar VERSION invalida
+  tudo no próximo deploy), precache do CORE (/offline, manifest, 3 ícones),
+  limpeza de caches antigos no activate, skipWaiting+clients.claim.
+- /offline (src/app/offline/page.tsx): fallback com marca, estilos INLINE de
+  propósito (renderiza bem mesmo sem o CSS/JS do app em cache), noindex.
+- SwRegister.tsx no layout raiz: registra /sw.js SÓ em produção (em dev o cache
+  atrapalharia o HMR); falha silenciosa.
+- .claude/launch.json: nova config "web-prod" (next start) p/ testar produção local.
+
+VERIFICAÇÃO (dupla):
+1. AO VIVO (build de produção + next start): SW registrado/ativado/controlando a
+   página; precache com os 5 itens; navegar para /planos populou o runtime cache
+   (HTML + 9 chunks JS/CSS). Página /offline responde com o conteúdo esperado.
+2. COMPORTAMENTAL (Node + vm, contra o sw.js REAL shipado): 10/10 PASSARAM —
+   install precacheia; activate limpa versão antiga; rede OK usa rede e cacheia;
+   OFFLINE serve página visitada do cache; OFFLINE cai no /offline p/ página nunca
+   vista; GET comum sem cache -> 503; cross-origin (API) passa direto; asset
+   cacheado servido offline; POST nunca interceptado.
+   (Motivo do teste em Node: matar o servidor local derruba junto a ponte de
+   avaliação do preview, e o Chrome extension falhou ao criar aba — impossível
+   simular offline de verdade no browser da sessão.)
+
+LIMITAÇÃO CONHECIDA: o SW só se registra em produção (Render). Em localhost dev
+não há SW — comportamento intencional.
+==================================================================
