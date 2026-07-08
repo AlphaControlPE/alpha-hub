@@ -765,3 +765,25 @@ RESOLVIDO (commit 018ddd4, verificado no live em 2026-07-08 02:37 UTC):
 ÚNICO PASSO RESTANTE (usuário): Render -> alpha-hub-api -> Environment ->
 adicionar MP_ACCESS_TOKEN (produção MP já validada por mim na API do MP).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-08 — Sessão 17: novo tema visual "Editorial sério" (fornecido pelo usuário)
+------------------------------------------------------------------
+O usuário entregou um globals.css completo (tema "Editorial sério", direção 3b):
+fundo papel (#f1f1ef), tinta (#1a1c20), verde editorial (#166a45), cantos RETOS
+(radius 0), sem sombras, tipografia Newsreader (títulos, serif) + Instrument
+Sans (interface) via Google Fonts. Mesma API de classes — componentes intactos.
+
+APLICADO + PASSE DE COERÊNCIA (para o resto acompanhar o tema):
+- apps/web/src/app/globals.css substituído pelo arquivo do usuário.
+- layout.tsx: viewport themeColor #0b1020 -> #fcfcfb; colorScheme dark -> light.
+- manifest.ts (PWA): background_color #f1f1ef, theme_color #fcfcfb.
+- /offline reescrita na paleta editorial (inline styles de propósito, como antes).
+MANTIDOS por decisão de escopo (identidade de marca ≠ tema do site): ícones
+PWA/favicon (A em gradiente azul-verde) e og.png (card social escuro).
+Se o usuário quiser, regenerar depois no estilo editorial.
+
+VERIFICAÇÃO: next build VERDE (23 rotas). Estilos computados conferidos ao
+vivo no build de produção: body #f1f1ef/Instrument Sans, h1 Newsreader 34px,
+.btn-primary tinta->papel. (Screenshot indisponível — preview instável.)
+==================================================================
