@@ -787,3 +787,35 @@ VERIFICAÇÃO: next build VERDE (23 rotas). Estilos computados conferidos ao
 vivo no build de produção: body #f1f1ef/Instrument Sans, h1 Newsreader 34px,
 .btn-primary tinta->papel. (Screenshot indisponível — preview instável.)
 ==================================================================
+
+==================================================================
+2026-07-08 — HANDOFF (usuário vai abrir novo chat p/ aliviar contexto)
+==================================================================
+COMO CONTINUAR: abrir o Claude Code JÁ DENTRO de C:\Users\alpha\Desktop\Alpha-Hub.
+A memória do projeto (atualizada nesta sessão) traz o estado, as pendências e os
+próximos passos — ler primeiro.
+
+ESTADO: tudo no ar e verificado. Último commit main = 17008b5 (tema editorial).
+API no ar rodando o build novo (incidente de deploy resolvido em 018ddd4, verificado
+live 2026-07-08). e2e 84/84. Tema visual "Editorial sério" aplicado (papel/tinta,
+Newsreader+Instrument Sans, cantos retos).
+
+DUAS FEATURES PRONTAS PORÉM DORMENTES (esperando o usuário colar a chave no Render):
+- Mercado Pago (pagamento Pix/cartão dos planos) -> env MP_ACCESS_TOKEN. Token de
+  PRODUÇÃO já validado por mim na API do MP (está na memória do projeto; NÃO gravar
+  em arquivo do repo). É produção: cobrança real, cartões de teste não funcionam.
+- Esqueci a senha -> env RESEND_API_KEY (chave grátis em resend.com).
+
+PENDÊNCIAS DO USUÁRIO (só ele faz): MP_ACCESS_TOKEN, RESEND_API_KEY, ADMIN_SENHA,
+secret DATABASE_URL no GitHub (backup), e — URGENTE ~fim de julho — resolver a
+expiração do Postgres grátis do Render (upgrade OU migrar p/ Neon, ver BACKUP.md).
+
+PRÓXIMOS PASSOS (código): regenerar ícones/og.png no estilo editorial (a marca
+ainda é a antiga azul-verde); domínio próprio; landing p/ visitante; escrow real
+(split MP, projeto grande). RECOMENDAÇÃO DO ESCOPO: validar com usuários reais antes
+de expandir.
+
+QUANDO O USUÁRIO LIGAR O MP: verificar live com
+`curl https://alpha-hub-api.onrender.com/api/planos/recursos` -> deve virar
+{"pagamentoReal":true} e o botão "Assinar com Pix/cartão" aparece em /planos.
+==================================================================
