@@ -755,4 +755,13 @@ ENSAIO COMPLETO em cópia limpa (git archive + mudanças) ANTES do push:
 LIÇÃO: em monorepo com deploy por rootDir, ou se usa workspaces DE VERDADE
 (lock raiz como fonte única, deploy instalando na raiz), ou não se usa nada —
 estado híbrido quebra de formas silenciosas.
+
+RESOLVIDO (commit 018ddd4, verificado no live em 2026-07-08 02:37 UTC):
+- /api/health OK; /api/auth/recursos e /api/planos/recursos respondendo
+  (=> build novo no ar, com esqueci-senha e Mercado Pago inclusos);
+  POST /api/webhooks/mercadopago existe (201).
+- esqueciSenha=false e pagamentoReal=false: CORRETO — as chaves
+  (RESEND_API_KEY / MP_ACCESS_TOKEN) ainda não foram coladas no painel.
+ÚNICO PASSO RESTANTE (usuário): Render -> alpha-hub-api -> Environment ->
+adicionar MP_ACCESS_TOKEN (produção MP já validada por mim na API do MP).
 ==================================================================
