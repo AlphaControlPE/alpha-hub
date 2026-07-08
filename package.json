@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "description": "Alpha Hub — marketplace gratuito (monólito modular, API-first, auditável)",
-  "workspaces": ["apps/*"],
   "scripts": {
     "dev:api": "npm --prefix apps/api run start:dev",
     "dev:web": "npm --prefix apps/web run dev",

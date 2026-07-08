@@ -704,4 +704,55 @@ ATIVAÇÃO (ação do usuário, quando quiser ligar):
    MP_ACCESS_TOKEN. Testar um pagamento com cartão de teste do MP.
 3. Quando validar: trocar pelo Access Token de PRODUÇÃO. Pronto — o botão
    "Assinar com Pix/cartão" aparece sozinho em /planos.
+
+ADENDO (mesma data): usuário criou a aplicação MP (app 5543586586784930) e um
+USUÁRIO DE TESTE, e forneceu as credenciais no chat. VALIDADO por mim direto
+na API do MP (sem tocar em painel):
+- GET /users/me com o Access Token -> conta de TESTE confirmada
+  (tipo_conta_teste=true, TESTUSER..., site MLB) — sandbox, sem dinheiro real.
+- POST /checkout/preferences com o payload exato do nosso service ->
+  PREFERENCE CRIADA (init_point válido, BRL) => token + formato aprovados.
+SEGREDOS NÃO gravados em repo/arquivos (uso efêmero; ficam só no painel do
+Render, colados pelo usuário). Higiene: senha/código do usuário de teste são
+só para o usuário logar no sandbox; recomendada rotação das chaves quando
+migrar para produção.
+PENDENTE (usuário): colar MP_ACCESS_TOKEN no Render -> eu verifico o live
+(GET /planos/recursos deve virar pagamentoReal=true e o botão Pix/cartão
+aparecer em /planos).
+==================================================================
+
+------------------------------------------------------------------
+2026-07-07 — Sessão 16: INCIDENTE — deploys da API falhando desde sábado (FIX)
+------------------------------------------------------------------
+SINTOMA: todo deploy da API no Render falhava com "Exited with status 1"
+desde o commit 94372aa (P0, sábado). O Render mantinha a VERSÃO ANTIGA no ar
+(por isso o site parecia normal). Web deployava OK. Migrações novas APLICARAM
+no banco de produção (esqueci_senha e pagamento_mercadopago) — só o app não
+subia. Erro real (logs colados pelo usuário): NestJS não achava
+@nestjs/platform-express em runtime.
+
+DIAGNÓSTICO (com reproduções locais em pasta limpa):
+- O campo "workspaces" no package.json da RAIZ fazia o npm (no Render, rodando
+  dentro de apps/api) detectar o monorepo e instalar com HOISTING guiado pelo
+  package-lock.json da raiz — que foi REESCRITO de forma inconsistente na
+  sessão do P0 (o incidente de hoisting registrado na Sessão 10). Resultado no
+  ambiente do Render: node_modules sem @nestjs/platform-express (que só é
+  carregado em runtime — o build passa, o app morre ao subir).
+- "Clear build cache & deploy" (tentado pelo usuário) NÃO resolveu.
+- Falsas pistas descartadas: package.json/locks dos apps estavam corretos;
+  instalação limpa local funcionava (npm 11); o problema era a combinação
+  workspaces + lock raiz inconsistente no npm do Render.
+
+FIX (determinístico, sem depender de versão de npm):
+- REMOVIDO "workspaces" do package.json da raiz (nada usava — os scripts são
+  todos npm --prefix) e DELETADO o package-lock.json da raiz (vestigial).
+- Cada app agora instala 100% auto-contido a partir do próprio lockfile.
+ENSAIO COMPLETO em cópia limpa (git archive + mudanças) ANTES do push:
+- API: npm install (sem hoisting, platform-express no lugar) -> prisma
+  generate -> nest build -> BOOT ok -> /api/health, /api/planos/recursos e
+  /api/auth/recursos respondendo.
+- WEB: npm install auto-contido ok -> next build ok (23 rotas).
+LIÇÃO: em monorepo com deploy por rootDir, ou se usa workspaces DE VERDADE
+(lock raiz como fonte única, deploy instalando na raiz), ou não se usa nada —
+estado híbrido quebra de formas silenciosas.
 ==================================================================
