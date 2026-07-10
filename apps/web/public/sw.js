@@ -9,7 +9,7 @@
  *
  * Para invalidar tudo num deploy futuro, basta trocar VERSION.
  */
-const VERSION = 'ah-v1';
+const VERSION = 'ah-v2';
 const PRECACHE = VERSION + '-pre';
 const RUNTIME = VERSION + '-run';
 const CORE = ['/offline', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png'];

@@ -63,11 +63,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#fcfcfb',
-  colorScheme: 'light',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f7fb' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0d12' },
+  ],
+  colorScheme: 'dark light',
   width: 'device-width',
   initialScale: 1,
 };
+
+// Aplica o tema salvo (localStorage['acTheme']) ANTES da primeira pintura,
+// evitando flash de cor no carregamento. Padrão: dark. Compartilha a chave
+// com os demais produtos Alpha Control.
+const TEMA_SCRIPT = `try{var t=localStorage.getItem('acTheme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}`;
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -102,7 +110,10 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: TEMA_SCRIPT }} />
+      </head>
       <body>
         <script
           type="application/ld+json"

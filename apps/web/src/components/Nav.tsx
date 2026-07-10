@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { NotificationBell } from '@/components/NotificationBell';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function Nav() {
   const { usuario, sair, carregando } = useAuth();
@@ -12,7 +13,11 @@ export function Nav() {
       <nav className="container nav-inner" aria-label="Navegação principal">
         <Link href="/" className="brand" aria-label="Alpha Hub — início">
           <span className="dot" aria-hidden="true" />
-          Alpha Hub
+          <span className="logo-lockup" aria-hidden="true">
+            <span className="logo-alpha">ALPHA</span>
+            <span className="logo-control">CONTROL</span>
+          </span>
+          <span className="logo-tag" aria-hidden="true">HUB</span>
         </Link>
         <span className="chip" title="Núcleo gratuito, sem paywall">grátis para participar</span>
         <div className="spacer" />
@@ -26,6 +31,7 @@ export function Nav() {
         {usuario && (usuario.papelSistema === 'ADMIN' || usuario.papelSistema === 'MODERADOR') && (
           <Link href="/admin" className="navlink">Admin</Link>
         )}
+        <ThemeToggle />
         {!carregando && usuario && (
           <>
             <Link href="/nova" className="btn btn-primary btn-sm">+ Nova solicitação</Link>

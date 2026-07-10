@@ -11,6 +11,15 @@
       "autoPort": false
     },
     {
+      "name": "web-preview",
+      "runtimeExecutable": "C:/Users/alpha/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.18.0-win-x64/node.exe",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev", "-p", "3007"],
+      "cwd": "C:/Users/alpha/Desktop/Alpha-Hub/apps/web",
+      "port": 3007,
+      "url": "http://localhost:3007",
+      "autoPort": false
+    },
+    {
       "name": "web-prod",
       "runtimeExecutable": "C:/Users/alpha/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.18.0-win-x64/node.exe",
       "runtimeArgs": ["node_modules/next/dist/bin/next", "start", "-p", "3000"],

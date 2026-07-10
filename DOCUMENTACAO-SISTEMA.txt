@@ -819,3 +819,135 @@ QUANDO O USUÁRIO LIGAR O MP: verificar live com
 `curl https://alpha-hub-api.onrender.com/api/planos/recursos` -> deve virar
 {"pagamentoReal":true} e o botão "Assinar com Pix/cartão" aparece em /planos.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-08 — Sessão 18: leitura/auditoria de estado (a pedido do usuário)
+------------------------------------------------------------------
+Novo chat: usuário pediu "ler toda a pasta, projeto e o site". Feita releitura
+do código (schema Prisma, app.module, home web, tema editorial) e VERIFICAÇÃO
+AO VIVO do ambiente no Render (serviços estavam dormindo — 503 — e foram
+acordados).
+
+ESTADO CONFIRMADO NO AR (2026-07-08 ~16:13 UTC):
+- API /api/health -> 200 {"status":"ok"}. Web / -> 200 (title/hero corretos).
+- Features gated seguem DORMENTES: /api/planos/recursos -> {"pagamentoReal":false};
+  /api/auth/recursos -> {"esqueciSenha":false}. Ou seja: MP_ACCESS_TOKEN e
+  RESEND_API_KEY ainda NÃO foram colados no painel do Render (pendência do usuário).
+- Dados públicos OK: /api/solicitacoes retorna 2 solicitações seed (1 em
+  EM_NEGOCIACAO com 1 proposta); /api/planos lista catálogo (Comunidade grátis,
+  Verificado Pro R$29,90, etc.).
+- Nada foi alterado no código nesta sessão — apenas leitura e verificação.
+Pendências e próximos passos permanecem os já registrados (ver handoff da Sessão 17
+e memória do projeto): MP_ACCESS_TOKEN, RESEND_API_KEY, ADMIN_SENHA, secret
+DATABASE_URL, e — URGENTE ~fim de julho — expiração do Postgres grátis do Render.
+==================================================================
+
+------------------------------------------------------------------
+2026-07-08 — Sessão 19: novo layout "Alpha Control" (azul + prata, dark/light)
+------------------------------------------------------------------
+O usuário entregou um handoff de design (zip "Design taste frontend hub" →
+design_handoff_alpha_control/) e pediu "integre o layout". Tela de referência:
+"Alpha Hub.dc.html" (Marketplace/Solicitação/Conversas/Planos). A NOTA DE
+INTEGRAÇÃO do handoff é explícita: trocar os tokens do globals.css pelo design
+system Alpha Control e ADICIONAR tema dark; componentes TSX não precisam de
+mudança estrutural. Substitui o tema "Editorial sério" (Sessão 17).
+
+O QUE MUDOU (camada de tokens + tema, mesma API de classes):
+- apps/web/src/app/globals.css REESCRITO no sistema "Alpha Control":
+  * DARK é o tema padrão (:root) + LIGHT via :root[data-theme="light"].
+    Dark: bg #0b0d12 / surface #12151d / fg #f1f3f8 / border #262b38.
+    Light: bg #f5f7fb / surface #fff / fg #12151c / border #e1e4ec.
+  * Acento azul único: #5b82ff (dark) / #2d5bea (light); --accent-fg calculado
+    por contraste (tinta escura sobre o azul claro do dark — passa AA).
+  * Tipografia: Space Grotesk (títulos) + IBM Plex Sans (interface) + IBM Plex
+    Mono (números/rótulos). Import do Google Fonts trocado.
+  * Raios do produto: cards 14px, botões/inputs 9px, pills 999px (badges/chips).
+  * Todos os nomes de variável que os TSX referenciam direto foram MANTIDOS
+    (--primary=ink [par dos gradientes], --accent, --text, --text-dim,
+    --surface-2, --bg-soft, --border, --warn) — nada quebrou.
+  * Classes atualizadas p/ fidelidade: badges (pill tingido por status),
+    chat (bolha "mine"=azul/accent-fg, "theirs"=panel-2), avatar (accent-tint),
+    inputs (focus ring accent), skeleton (base/sheen por tema), nav translúcida.
+- Nav.tsx: logotipo ALPHA (gradiente prata) + CONTROL (gradiente azul) + tag
+  "HUB" (mono), no lugar do texto "Alpha Hub". + <ThemeToggle/> sempre visível.
+- ThemeToggle.tsx (NOVO): alterna dark/light, persiste em localStorage['acTheme']
+  (mesma chave dos outros produtos Alpha Control). Ícone sol/lua em SVG inline
+  (sem dependência de icon-font nova).
+- layout.tsx: script inline no <head> aplica data-theme ANTES da 1ª pintura
+  (anti-flash, padrão dark); <html suppressHydrationWarning>; viewport themeColor
+  claro/escuro + colorScheme "dark light".
+- manifest.ts: background/theme_color → #0b0d12 (dark).
+- offline/page.tsx: paleta inline atualizada p/ Alpha Control dark.
+- public/sw.js: VERSION ah-v1 → ah-v2 (invalida cache antigo p/ usuários recorrentes).
+- .claude/launch.json: adicionada config "web-preview" (porta 3007) — a 3000
+  estava ocupada por OUTRO projeto (Desktop\ERP, Alpha Control ERP em next start);
+  NÃO foi tocado.
+
+VERIFICAÇÃO (dev server local :3007, via estilos computados — screenshot instável
+nesta máquina):
+- next build de PRODUÇÃO VERDE (23 rotas).
+- Dark (padrão): body #0b0d12, card #12151d, fg #f1f3f8. Light (toggle): body
+  #f5f7fb, h1 #12151c, botão primário #2d5bea. Toggle troca data-theme e grava
+  acTheme; sem flash no load. Logo com gradientes prata/azul + Space Grotesk OK.
+- Único erro no console = GET localhost:3001/api/solicitacoes falhando (API local
+  não estava no ar; a home não tem catch nessa chamada) — ambiental, pré-existente.
+- Nada na API/NestJS foi alterado.
+
+NÃO FEITO (fora do escopo "camada de tokens"; possíveis follow-ups):
+- Ícones/favicon/og.png ainda são a marca ANTIGA (Alpha Hub A azul-verde) — agora
+  destoam do logo ALPHA CONTROL in-app. Regenerar no estilo Alpha Control.
+- Ícones Phosphor por toda a UI (sino/busca/enviar seguem emoji/texto); filtros de
+  categoria seguem <select> em vez de pills. Divergências menores do protótipo.
+
+NÃO COMMITADO/DEPLOYADO: mudanças no working tree; deploy é por git push (o usuário
+decide quando publicar no Render).
+==================================================================
+
+------------------------------------------------------------------
+2026-07-10 — Sessão 20: "mate tudo" — ícones/OG novos + landing de visitante + deploy
+------------------------------------------------------------------
+Usuário: "comece pelo mais urgente e mate tudo". Executei tudo que NÃO depende da
+conta dele; o resto ficou com passos exatos (ver PENDÊNCIAS abaixo).
+
+1) URGENTE (dados/Postgres) — auditado, já estava turnkey:
+   - .github/workflows/backup.yml faz pg_dump 16 + gzip diário (06:00 UTC),
+     artifact 14 dias. BACKUP.md tem manual + Neon + upgrade. NADA a mudar no
+     código. Falta só AÇÃO DO USUÁRIO (conta): colar secret DATABASE_URL no
+     GitHub e rodar 1x; e resolver a expiração ~fim de julho (upgrade OU Neon).
+
+2) Ícones/favicon/OG regenerados na marca "Alpha Control" (antes eram a antiga
+   A azul-verde, que destoava do logo novo):
+   - public/icon.svg + icon-maskable.svg: quadrado gradiente azul (#6b8cff→#2d5bea)
+     + "A" geométrico em ink #0a0d14 (= accent + accent-fg do design).
+   - PNGs regerados via canvas do browser (sem sharp/canvas na máquina): icon-192
+     (192²), icon-512 (512²), apple-icon (180², full-bleed), og.png (1200×630,
+     card dark com lockup ALPHA/CONTROL+HUB, headline Space Grotesk, URL mono).
+     Método: página temp public/__icongen.html desenha em canvas + rota temp
+     /api/iconsave grava os PNG; AMBAS removidas depois. Verificado por Read das
+     imagens (renderizam certo) e dimensões conferidas.
+
+3) Landing de visitante (antes caía direto no feed):
+   - components/FeedSolicitacoes.tsx (NOVO): feed extraído (busca + filtro +
+     recomendadas + lista), reutilizável. Deep-link ?q=/?categoria= preservado.
+   - components/Landing.tsx (NOVO): hero + "Como funciona" (4 passos) +
+     "Por que o Alpha Hub" (4 diferenciais, 1º em accent-tint) + categorias
+     (chips → /?categoria=X#solicitacoes) + faixa CTA azul + feed público embutido
+     (#solicitacoes) — navegação pública do núcleo preservada.
+   - app/page.tsx: ramifica — carregando→skeleton; visitante→<Landing/>;
+     logado→cabeçalho enxuto + <FeedSolicitacoes/>. Removido em-dash da copy
+     herdada (regra do design system = zero em-dash).
+
+VERIFICAÇÃO: next build de PRODUÇÃO VERDE (23 rotas; / passou p/ 4.21kB). Landing
+conferida no dev :3007 (dark): faixa CTA #5b82ff c/ ink #0a0d14, passos accent-tint,
+H1 Space Grotesk; sem erros de console. Screenshot segue instável (usei estrutura +
+estilos computados + Read das imagens). API local fora do ar = únicas falhas de fetch.
+
+DEPLOY: commitado e PUSH na main (usuário autorizou "mate tudo") — Render publica só
+o serviço web (mudanças 100% web; sem API/migrations). Ver verificação live no fim.
+
+PENDÊNCIAS QUE SÓ O USUÁRIO FAZ (não são código; dei os passos):
+- Render→alpha-hub-api→Environment: MP_ACCESS_TOKEN (liga pagamento), RESEND_API_KEY
+  (liga esqueci-senha), ADMIN_SENHA forte (fecha admin).
+- GitHub secret DATABASE_URL (liga backup) + rodar o Action 1x.
+- URGENTE ~fim de julho: expiração do Postgres grátis do Render (upgrade OU Neon).
+==================================================================
