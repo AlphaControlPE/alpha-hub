@@ -261,6 +261,28 @@ label.field .lbl { display: block; font-family: var(--mono); font-size: 11px; fo
   background: transparent; border: 1px solid var(--border); padding: 3px 10px; border-radius: 999px;
 }
 
+/* Barra de filtros do marketplace (busca com ícone + pills de categoria) */
+.filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.search-box {
+  display: flex; align-items: center; gap: 8px; flex: 1 1 240px; max-width: 340px;
+  background: var(--surface); border: 1px solid var(--border-input); border-radius: var(--radius);
+  padding: 9px 13px; color: var(--text-dim);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.search-box input { flex: 1; min-width: 0; border: none; background: transparent; color: var(--text); font-size: 13.5px; font-family: inherit; outline: none; }
+.search-box input::placeholder { color: var(--text-faint); }
+.cat-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.cat-pill {
+  border: 1px solid var(--border); background: transparent; color: var(--text-dim);
+  border-radius: 999px; padding: 6px 13px; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.cat-pill:hover { color: var(--text); border-color: var(--text-faint); }
+.cat-pill.ativo { border: 1.5px solid var(--text); background: var(--surface); color: var(--text); }
+.cont-resultados { font-family: var(--mono); font-size: 12px; color: var(--text-dim); margin-left: auto; }
+
 .muted { color: var(--text-dim); }
 .h1 { font-family: var(--serif); font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.25rem); font-weight: 600; letter-spacing: -0.01em; margin: 0 0 8px; line-height: 1.12; }
 .h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 12px; }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { api, API_URL, getToken } from '@/lib/api';
 import { Mensagem } from '@/lib/types';
+import { IconSend } from '@/components/icons';
 
 export function Chat({ conversaId, meuId }: { conversaId: string; meuId: string }) {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -82,7 +83,9 @@ export function Chat({ conversaId, meuId }: { conversaId: string; meuId: string 
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Escreva uma mensagem…"
         />
-        <button className="btn btn-primary" type="submit">Enviar</button>
+        <button className="btn btn-primary" type="submit" aria-label="Enviar" style={{ width: 44, padding: 0 }}>
+          <IconSend />
+        </button>
       </form>
     </div>
   );

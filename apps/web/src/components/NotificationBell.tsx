@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { api, API_URL, getToken } from '@/lib/api';
 import { Notificacao } from '@/lib/types';
+import { IconBell } from '@/components/icons';
 
 export function NotificationBell() {
   const router = useRouter();
@@ -58,7 +59,7 @@ export function NotificationBell() {
         aria-expanded={aberto}
         aria-label={naoLidas > 0 ? `Notificações, ${naoLidas} não lidas` : 'Notificações'}
       >
-        <span aria-hidden="true">🔔</span>
+        <IconBell />
         {naoLidas > 0 && (
           <span className="bell-badge" aria-hidden="true">{naoLidas > 9 ? '9+' : naoLidas}</span>
         )}

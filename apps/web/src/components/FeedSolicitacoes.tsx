@@ -6,6 +6,16 @@ import { api, centavosParaReal } from '@/lib/api';
 import { Paginated, Solicitacao } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { SkeletonList } from '@/components/Skeleton';
+import { IconSearch } from '@/components/icons';
+
+const ROTULO_CAT: Record<string, string> = {
+  '': 'Todas',
+  design: 'design',
+  desenvolvimento: 'desenvolvimento',
+  marketing: 'marketing',
+  redação: 'redação',
+  consultoria: 'consultoria',
+};
 
 const CATEGORIAS = ['', 'design', 'desenvolvimento', 'marketing', 'redação', 'consultoria'];
 
@@ -85,20 +95,30 @@ export function FeedSolicitacoes() {
         </div>
       )}
 
-      <div className="row" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-        <input
-          className="input"
-          style={{ maxWidth: 320 }}
-          placeholder="Buscar por título ou descrição…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <select className="input" style={{ maxWidth: 200 }} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+      <div className="filtros">
+        <div className="search-box">
+          <IconSearch />
+          <input
+            aria-label="Buscar solicitações"
+            placeholder="Buscar por título ou descrição…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <div className="cat-pills" role="group" aria-label="Filtrar por categoria">
           {CATEGORIAS.map((c) => (
-            <option key={c} value={c}>{c === '' ? 'Todas as categorias' : c}</option>
+            <button
+              key={c}
+              type="button"
+              className={`cat-pill${categoria === c ? ' ativo' : ''}`}
+              aria-pressed={categoria === c}
+              onClick={() => setCategoria(c)}
+            >
+              {ROTULO_CAT[c] ?? c}
+            </button>
           ))}
-        </select>
-        <span className="muted" style={{ fontSize: 13 }}>{total} resultado(s)</span>
+        </div>
+        <span className="cont-resultados">{total} resultado(s)</span>
       </div>
 
       <div className="card">

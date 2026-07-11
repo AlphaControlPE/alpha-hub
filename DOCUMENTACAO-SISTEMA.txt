@@ -971,3 +971,24 @@ colapsam, clique abre dropdown full-width ancorado abaixo do header (links
 empilhados). Feed com API local fora agora mostra o estado de erro (sem rejeito).
 DEPLOY: commitado + push na main (mudanças 100% web).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-10 — Sessão 22: fidelidade ao protótipo (filtros, ícones)
+------------------------------------------------------------------
+Usuário: "go" (seguir com fidelidade + qualidade). Marketplace mais parecido com
+o protótipo Alpha Hub.dc.html, e ícones consistentes:
+- ÍCONES SVG inline (NOVO components/icons.tsx): IconSearch, IconBell, IconSend.
+  Self-contained (sem icon-font/CDN — preserva PWA/offline e evita problema de CSP).
+- FILTROS do feed (FeedSolicitacoes): <select> de categoria virou PILLS (Todas +
+  5 categorias reais; ativa = borda 1.5px na cor do texto), e a busca virou uma
+  search-box com ícone de lupa e focus-ring accent. Deep-link ?categoria= mantido.
+  CSS: .filtros/.search-box/.cat-pill(.ativo)/.cont-resultados em globals.css.
+- SINO (NotificationBell): emoji 🔔 -> <IconBell/>.
+- CHAT (Chat.tsx): botão "Enviar" -> botão-ícone quadrado (avião de papel), como
+  no protótipo.
+VERIFICAÇÃO (dev :3007): next build VERDE (23 rotas). 6 pills com "Todas" ativa por
+padrão; clicar "design" ativa só ela e URL vira /?categoria=design#solicitacoes;
+ícone de lupa presente; search-box raio 9px com focus-ring. Emojis 🔎/⚠️ dos
+estados vazios/erro mantidos de propósito (aceitáveis).
+DEPLOY: commitado + push na main (100% web).
+==================================================================
