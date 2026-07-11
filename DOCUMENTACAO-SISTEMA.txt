@@ -1138,3 +1138,44 @@ VERIFICAÇÃO: nest build + next build VERDES. Suíte e2e COMPLETA 95/95 (perfil
 UI de edição fica atrás de login (não testável no ar sem logar), mas coberta por e2e.
 DEPLOY: commit + push na main (API + web; SEM migration).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-11 — Sessão 29: 3 features em PARALELO via subagentes (worktrees)
+------------------------------------------------------------------
+Usuário pediu: "atira nos 3 primeiros, cada um com um agente e dps vc valida".
+Disparei 3 subagentes, cada um num git worktree isolado, com briefing autocontido
+(setup de env/Postgres compartilhado, convenções pt-BR/auditoria, arquivos de teste
+NOVOS p/ evitar conflito). Revisei os 3 diffs, mergeei em sequência na main local,
+validei TUDO de novo e publiquei. SEM migrations (nenhum agente tocou no schema).
+
+1) MODERAÇÃO — listar/revogar sanções (agente 1):
+   - GET /admin/sancoes (MODERADOR/ADMIN; filtro ?usuarioId) — inclui alvo e
+     aplicador (id+nome, sem dados sensíveis).
+   - PATCH /admin/sancoes/:id/desativar (SÓ ADMIN; motivo opcional) — ativa=false;
+     revogar já-inativa = 409 (padrão do módulo); audita 'sancao.revogada' e
+     notifica o usuário afetado.
+   - /admin: nova seção "Sanções ativas" (tipo, motivo, quem aplicou, data; botão
+     Revogar só p/ ADMIN). Tipo Sancao em lib/types.ts.
+   - NOVO test/moderacao-sancoes.e2e-spec.ts (7 casos).
+2) COMUNIDADE — remover próprio conteúdo + denunciar (agente 2):
+   - DELETE /insights/:id (só autor) e DELETE /insights/:id/comentarios/:comentarioId
+     (só autor do comentário; 404 se comentário não pertence ao insight). Cascade do
+     schema já apaga votos/comentários junto. Audita ambos.
+   - UI: botão Remover (autor) e ReportButton INSIGHT (não-autor) na lista e no
+     detalhe; remoção de comentário próprio no detalhe. Fix de bordo: ReportButton
+     não aparece mais para o próprio autor no detalhe.
+   - NOVO test/comunidade-extra.e2e-spec.ts (9 casos).
+3) BUSCA — página /busca no frontend (agente 3):
+   - O endpoint GET /api/busca?q= JÁ existia e era testado, mas NENHUMA página o
+     consumia (busca morta). Nova apps/web/src/app/busca/page.tsx: busca global
+     deep-linkável (?q=), debounce 250ms, seções Solicitações + Comunidade,
+     estados carregando/vazio/zero/erro; layout.tsx noindex. Link discreto
+     "Ver também na comunidade →" no FeedSolicitacoes quando há query.
+   - Só frontend; backend intocado.
+VALIDAÇÃO FINAL (na main integrada, feita por mim após os merges):
+- nest build exit 0; next build verde (24 rotas — /busca nova).
+- Suíte e2e completa 111/111 (95 base + 9 comunidade + 7 sanções).
+TAMBÉM NESTA SESSÃO: .claude/launch.json "web" com autoPort:true (porta 3000 estava
+ocupada por dev server de outro chat; agora cai em porta livre automaticamente).
+DEPLOY: push na main (API + web). Verificação live após deploy.
+==================================================================
