@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DenunciaStatus, Prisma } from '@prisma/client';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -10,6 +10,8 @@ import {
 } from './dto/moderacao.dto';
 
 const autorPublico = { select: { id: true, nome: true, verificado: true } };
+// Dados mínimos do usuário-alvo/aplicador de sanção — sem e-mail nem outros dados sensíveis.
+const usuarioMinimo = { select: { id: true, nome: true } };
 
 @Injectable()
 export class ModeracaoService {
@@ -108,6 +110,53 @@ export class ModeracaoService {
       origem,
     });
     return sancao;
+  }
+
+  /** Staff: lista sanções aplicadas, com filtro opcional por usuário-alvo. */
+  async listarSancoes(usuarioId?: string) {
+    const where: Prisma.SancaoWhereInput = usuarioId ? { usuarioId } : {};
+    return this.prisma.sancao.findMany({
+      where,
+      include: { usuario: usuarioMinimo, aplicadaPor: usuarioMinimo },
+      orderBy: { criadoEm: 'desc' },
+      take: 100,
+    });
+  }
+
+  /**
+   * Revoga uma sanção (só ADMIN). Já-inativa é tratada como conflito (409),
+   * seguindo o padrão do módulo para transições de estado já concluídas
+   * (ex.: convite já usado, verificação já decidida).
+   */
+  async desativarSancao(id: string, adminId: string, motivo?: string, origem?: string) {
+    const sancao = await this.prisma.sancao.findUnique({ where: { id } });
+    if (!sancao) throw new NotFoundException('Sanção não encontrada');
+    if (!sancao.ativa) throw new ConflictException('Sanção já está inativa');
+
+    const atualizada = await this.prisma.sancao.update({
+      where: { id },
+      data: { ativa: false },
+    });
+    await this.audit.registrar({
+      acao: 'sancao.revogada',
+      entidade: 'Sancao',
+      entidadeId: id,
+      autorId: adminId,
+      antes: { ativa: true },
+      depois: { ativa: false },
+      motivo: motivo ?? null,
+      origem,
+    });
+    await this.notificacoes.notificar({
+      userId: sancao.usuarioId,
+      categoria: 'moderacao',
+      tipo: 'sancao.revogada',
+      titulo: 'Sanção revogada',
+      corpo: `Sua sanção (${sancao.tipo.toLowerCase()}) foi revogada pela moderação.`,
+      entidade: 'Sancao',
+      entidadeId: id,
+    });
+    return atualizada;
   }
 
   /** Métricas operacionais para o painel admin (escopo 15.x). */

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Denuncia, Metricas, Organizacao } from '@/lib/types';
+import { Denuncia, Metricas, Organizacao, Sancao } from '@/lib/types';
 
 const ehStaff = (p?: string) => p === 'ADMIN' || p === 'MODERADOR';
 
@@ -15,20 +15,23 @@ export default function AdminPage() {
   const [metricas, setMetricas] = useState<Metricas | null>(null);
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
   const [verificacoes, setVerificacoes] = useState<Organizacao[]>([]);
+  const [sancoes, setSancoes] = useState<Sancao[]>([]);
 
   useEffect(() => {
     if (!carregando && !ehStaff(usuario?.papelSistema)) router.replace('/');
   }, [carregando, usuario, router]);
 
   const carregar = useCallback(async () => {
-    const [m, d, v] = await Promise.all([
+    const [m, d, v, s] = await Promise.all([
       api<Metricas>('/admin/metricas'),
       api<Denuncia[]>('/admin/denuncias'),
       api<Organizacao[]>('/admin/verificacoes'),
+      api<Sancao[]>('/admin/sancoes'),
     ]);
     setMetricas(m);
     setDenuncias(d);
     setVerificacoes(v);
+    setSancoes(s);
   }, []);
 
   useEffect(() => { if (ehStaff(usuario?.papelSistema)) carregar(); }, [usuario, carregar]);
@@ -40,6 +43,11 @@ export default function AdminPage() {
 
   async function decidirVerificacao(orgId: string, decisao: 'APROVADA' | 'REJEITADA') {
     await api(`/admin/verificacoes/${orgId}`, { method: 'PATCH', body: JSON.stringify({ decisao }) });
+    await carregar();
+  }
+
+  async function revogarSancao(id: string) {
+    await api(`/admin/sancoes/${id}/desativar`, { method: 'PATCH', body: JSON.stringify({}) });
     await carregar();
   }
 
@@ -90,6 +98,28 @@ export default function AdminPage() {
                 <button className="btn btn-accent btn-sm" onClick={() => decidirVerificacao(o.id, 'APROVADA')}>Aprovar</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => decidirVerificacao(o.id, 'REJEITADA')}>Rejeitar</button>
               </span>
+            </div>
+          ))
+        )}
+      </div>
+
+      <h2 className="h2">Sanções ativas</h2>
+      <div className="card" style={{ marginBottom: 24 }}>
+        {sancoes.filter((s) => s.ativa).length === 0 ? (
+          <div className="empty">Nenhuma sanção ativa.</div>
+        ) : (
+          sancoes.filter((s) => s.ativa).map((s) => (
+            <div key={s.id} className="sol-item between">
+              <div>
+                <strong>{s.usuario.nome}</strong>
+                <span className="chip" style={{ marginLeft: 8 }}>{s.tipo.toLowerCase()}</span>
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  {s.motivo} · aplicada por {s.aplicadaPor.nome} em {new Date(s.criadoEm).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+              {usuario?.papelSistema === 'ADMIN' && (
+                <button className="btn btn-ghost btn-sm" onClick={() => revogarSancao(s.id)}>Revogar</button>
+              )}
             </div>
           ))
         )}

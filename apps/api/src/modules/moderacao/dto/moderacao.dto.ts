@@ -58,3 +58,10 @@ export class AplicarSancaoDto {
   @IsString()
   expiraEm?: string;
 }
+
+export class DesativarSancaoDto {
+  @ApiPropertyOptional({ example: 'Usuário cumpriu o período de suspensão' })
+  @IsOptional()
+  @IsString()
+  motivo?: string;
+}
