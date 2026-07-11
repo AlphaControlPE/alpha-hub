@@ -2,9 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  GoneException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { createHash, randomBytes } from 'crypto';
 import { PapelMembro, Prisma } from '@prisma/client';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -14,9 +16,13 @@ import {
   AddMembroDto,
   AlterarPapelDto,
   CreateOrganizacaoDto,
+  CriarConviteDto,
   DecidirVerificacaoDto,
   PedirVerificacaoDto,
 } from './dto/organizacoes.dto';
+
+// Guarda só o hash do token do convite; o token cru vai apenas no link.
+const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 // Dados públicos do usuário dentro da org — nunca expor e-mail de terceiros.
 const usuarioPublico = { select: { id: true, nome: true } };
@@ -202,6 +208,95 @@ export class OrganizacoesService {
       depois: { papel: atualizado.papel },
     });
     return { userId: alvoUserId, papel: atualizado.papel };
+  }
+
+  /**
+   * Gera um convite por link (só DONO/ADMIN). Retorna o token cru UMA vez — quem
+   * gerou monta o link e compartilha. Uso único, com expiração (1-30 dias).
+   */
+  async criarConvite(orgId: string, userId: string, dto: CriarConviteDto) {
+    await this.exigirMembro(orgId, userId, ['DONO', 'ADMIN']);
+    const org = await this.prisma.organization.findUnique({ where: { id: orgId } });
+    if (!org) throw new NotFoundException('Organização não encontrada');
+
+    const token = randomBytes(32).toString('hex');
+    const papel = (dto.papel ?? 'MEMBRO') as PapelMembro;
+    const expiraEm = new Date(Date.now() + (dto.expiraDias ?? 7) * 86_400_000);
+
+    const convite = await this.prisma.conviteOrganizacao.create({
+      data: { orgId, tokenHash: hashToken(token), papel, expiraEm, criadoPorId: userId },
+    });
+    await this.audit.registrar({
+      acao: 'organizacao.convite.criado',
+      entidade: 'ConviteOrganizacao',
+      entidadeId: convite.id,
+      autorId: userId,
+      depois: { orgId, papel, expiraEm },
+    });
+    return { token, papel, expiraEm };
+  }
+
+  /** Prévia pública (a quem tem o link): dados mínimos para a tela de aceite. */
+  async previewConvite(token: string) {
+    const convite = await this.prisma.conviteOrganizacao.findUnique({
+      where: { tokenHash: hashToken(token) },
+      include: { org: { select: { id: true, nome: true, verificado: true } } },
+    });
+    if (!convite) throw new NotFoundException('Convite inválido');
+    return {
+      org: convite.org,
+      papel: convite.papel,
+      expirado: convite.expiraEm < new Date(),
+      usado: convite.usadoEm !== null,
+    };
+  }
+
+  /** Aceita o convite: o usuário logado entra na org com o papel do convite. */
+  async aceitarConvite(token: string, userId: string) {
+    const convite = await this.prisma.conviteOrganizacao.findUnique({
+      where: { tokenHash: hashToken(token) },
+      include: { org: { select: { id: true, nome: true } } },
+    });
+    if (!convite) throw new NotFoundException('Convite inválido');
+    if (convite.usadoEm) throw new ConflictException('Este convite já foi utilizado');
+    if (convite.expiraEm < new Date()) throw new GoneException('Este convite expirou');
+
+    const jaMembro = await this.prisma.membership.findUnique({
+      where: { userId_orgId: { userId, orgId: convite.orgId } },
+    });
+    if (jaMembro) throw new ConflictException('Você já participa desta organização');
+
+    // Marca como usado de forma atômica (guarda contra corrida no link único).
+    const marcado = await this.prisma.conviteOrganizacao.updateMany({
+      where: { id: convite.id, usadoEm: null },
+      data: { usadoEm: new Date(), usadoPorId: userId },
+    });
+    if (marcado.count === 0) throw new ConflictException('Este convite já foi utilizado');
+
+    const membro = await this.prisma.membership.create({
+      data: { orgId: convite.orgId, userId, papel: convite.papel },
+    });
+    await this.audit.registrar({
+      acao: 'organizacao.convite.aceito',
+      entidade: 'Membership',
+      entidadeId: membro.id,
+      autorId: userId,
+      depois: { orgId: convite.orgId, papel: convite.papel, conviteId: convite.id },
+    });
+
+    const novo = await this.prisma.user.findUnique({ where: { id: userId }, select: { nome: true } });
+    await this.notificacoes.notificar({
+      userId: convite.criadoPorId,
+      categoria: 'comunidade',
+      tipo: 'organizacao.convite.aceito',
+      titulo: 'Convite aceito',
+      corpo: `${novo?.nome ?? 'Um novo membro'} entrou em "${convite.org.nome}" pelo link de convite.`,
+      link: '/organizacoes',
+      entidade: 'Organization',
+      entidadeId: convite.orgId,
+    });
+
+    return { orgId: convite.orgId, nome: convite.org.nome, papel: convite.papel };
   }
 
   /** Pede o selo de verificação (só DONO/ADMIN); exige CNPJ preenchido. */

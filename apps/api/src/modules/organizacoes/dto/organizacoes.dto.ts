@@ -2,9 +2,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 import { ECnpj } from '../../../common/validacao/cnpj';
@@ -59,6 +62,20 @@ export class PedirVerificacaoDto {
   @IsString()
   @ECnpj()
   documento?: string;
+}
+
+export class CriarConviteDto {
+  @ApiPropertyOptional({ enum: PAPEIS_ATRIBUIVEIS, default: 'MEMBRO', description: 'Papel concedido ao aceitar' })
+  @IsOptional()
+  @IsIn(PAPEIS_ATRIBUIVEIS)
+  papel?: PapelAtribuivel;
+
+  @ApiPropertyOptional({ default: 7, minimum: 1, maximum: 30, description: 'Dias até o link expirar' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(30)
+  expiraDias?: number;
 }
 
 export class DecidirVerificacaoDto {

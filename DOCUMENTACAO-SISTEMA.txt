@@ -1070,3 +1070,31 @@ features autenticadas.
 VERIFICAÇÃO: e2e organizacoes 10/10; suíte completa 85/85 verde.
 DEPLOY: commit do teste (sem mudança de comportamento; API redeploya inócuo).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-11 — Sessão 26: convite de organização por link (Parte III)
+------------------------------------------------------------------
+Usuário: "go" (feature concreta, com o harness e2e agora funcionando). Antes só
+dava p/ adicionar quem JÁ tinha conta, por e-mail. Agora há convite por LINK.
+
+SCHEMA (migration 20260711073930_convites_organizacao — ADITIVA, tabela nova):
+- model ConviteOrganizacao: tokenHash (sha-256; token cru só no link), papel
+  (MEMBRO|ADMIN, nunca DONO), expiraEm, usadoEm/usadoPorId, criadoPorId, orgId.
+BACKEND (módulo organizacoes):
+- POST /organizacoes/:id/convites (DONO/ADMIN) -> gera token (retornado UMA vez),
+  papel e validade (1-30 dias, default 7). Audita.
+- GET /organizacoes/convite/:token -> prévia (org, papel, expirado?, usado?).
+- POST /organizacoes/convite/:token/aceitar -> usuário logado entra na org com o
+  papel do convite. Uso ÚNICO (marca usado via updateMany guard atômico), rejeita
+  expirado (410), já-usado (409), já-membro (409), token inválido (404). Notifica
+  quem criou + audita.
+FRONTEND:
+- /organizacoes (gestor): bloco "Convidar por link" -> gera e copia o link.
+- NOVA /organizacoes/convite/[token] (+layout noindex): prévia + "Aceitar e entrar";
+  se deslogado, pede login.
+VERIFICAÇÃO: nest build + next build VERDES. e2e organizacoes 15/15 (5 casos novos
+de convite: gerar/403, token inválido/404, preview, aceitar+uso único/409, já-membro/409).
+Página de aceite conferida no dev (estado deslogado, sem erro de console, dark).
+DEPLOY: commit + push na main. API redeploya e roda `prisma migrate deploy` (cria a
+tabela nova) — aditivo e seguro. Confirmar no ar: /api/health + Swagger com os endpoints.
+==================================================================

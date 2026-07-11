@@ -36,6 +36,7 @@ describe('Organizações & verificação (e2e)', () => {
   let membroId = '';
   let tAdmin = '';
   let orgId = '';
+  let conviteToken = '';
 
   const reg = async (s: string) => {
     const r = await request(http()).post('/api/auth/register')
@@ -121,6 +122,45 @@ describe('Organizações & verificação (e2e)', () => {
       .send({ decisao: 'APROVADA' }).expect(200);
     expect(r.body.verificado).toBe(true);
     expect(r.body.verificacaoStatus).toBe('APROVADA');
+  });
+
+  it('gestor gera convite por link; não-gestor é barrado (403)', async () => {
+    await request(http()).post(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tMembro}`)
+      .send({}).expect(403);
+    const r = await request(http()).post(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tDono}`)
+      .send({ papel: 'ADMIN', expiraDias: 3 }).expect(201);
+    expect(typeof r.body.token).toBe('string');
+    expect(r.body.papel).toBe('ADMIN');
+    conviteToken = r.body.token;
+  });
+
+  it('token inválido -> 404 (preview e aceite)', async () => {
+    await request(http()).get('/api/organizacoes/convite/naoexiste').set('Authorization', `Bearer ${tMembro}`).expect(404);
+    await request(http()).post('/api/organizacoes/convite/naoexiste/aceitar').set('Authorization', `Bearer ${tMembro}`).expect(404);
+  });
+
+  it('preview mostra a org e o papel do convite', async () => {
+    const r = await request(http()).get(`/api/organizacoes/convite/${conviteToken}`).set('Authorization', `Bearer ${tMembro}`).expect(200);
+    expect(r.body.org.id).toBe(orgId);
+    expect(r.body.papel).toBe('ADMIN');
+    expect(r.body.usado).toBe(false);
+  });
+
+  it('novo usuário aceita o convite e entra na org; link é de uso único (409)', async () => {
+    const convidado = await reg('convidado');
+    const r = await request(http()).post(`/api/organizacoes/convite/${conviteToken}/aceitar`).set('Authorization', `Bearer ${convidado.token}`).expect(201);
+    expect(r.body.orgId).toBe(orgId);
+    expect(r.body.papel).toBe('ADMIN');
+    // agora é membro: vê o detalhe da org
+    await request(http()).get(`/api/organizacoes/${orgId}`).set('Authorization', `Bearer ${convidado.token}`).expect(200);
+    // uso único: aceitar de novo (outro usuário) -> 409
+    const outro = await reg('convidado2');
+    await request(http()).post(`/api/organizacoes/convite/${conviteToken}/aceitar`).set('Authorization', `Bearer ${outro.token}`).expect(409);
+  });
+
+  it('quem já é membro não aceita convite (409)', async () => {
+    const r = await request(http()).post(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tDono}`).send({}).expect(201);
+    await request(http()).post(`/api/organizacoes/convite/${r.body.token}/aceitar`).set('Authorization', `Bearer ${tDono}`).expect(409);
   });
 
   it('remove membro (só gestor); dono é imutável', async () => {

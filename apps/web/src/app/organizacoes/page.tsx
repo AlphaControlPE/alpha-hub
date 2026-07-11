@@ -29,6 +29,8 @@ export default function OrganizacoesPage() {
   // gestão
   const [emailMembro, setEmailMembro] = useState('');
   const [cnpjVerif, setCnpjVerif] = useState('');
+  const [conviteLink, setConviteLink] = useState('');
+  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     if (!carregando && !usuario) router.replace('/login');
@@ -43,6 +45,8 @@ export default function OrganizacoesPage() {
 
   const abrir = async (id: string) => {
     setErro('');
+    setConviteLink('');
+    setCopiado(false);
     setAberta(await api<Organizacao>(`/organizacoes/${id}`));
   };
 
@@ -86,6 +90,28 @@ export default function OrganizacoesPage() {
     const novo = papel === 'ADMIN' ? 'MEMBRO' : 'ADMIN';
     await api(`/organizacoes/${aberta.id}/membros/${userId}`, { method: 'PATCH', body: JSON.stringify({ papel: novo }) });
     await abrir(aberta.id);
+  }
+
+  async function gerarConvite() {
+    if (!aberta) return;
+    setErro('');
+    setCopiado(false);
+    try {
+      const r = await api<{ token: string }>(`/organizacoes/${aberta.id}/convites`, { method: 'POST', body: JSON.stringify({}) });
+      setConviteLink(`${window.location.origin}/organizacoes/convite/${r.token}`);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Falha ao gerar convite');
+    }
+  }
+
+  async function copiarConvite() {
+    try {
+      await navigator.clipboard.writeText(conviteLink);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      /* clipboard indisponível */
+    }
   }
 
   async function pedirVerificacao(e: React.FormEvent) {
@@ -210,6 +236,29 @@ export default function OrganizacoesPage() {
                       <input className="input" type="email" placeholder="adicionar por e-mail" value={emailMembro} onChange={(e) => setEmailMembro(e.target.value)} required />
                       <button className="btn btn-primary btn-sm">Adicionar</button>
                     </form>
+
+                    <div className="sep" />
+                    <strong style={{ fontSize: 14 }}>Convidar por link</strong>
+                    <p className="muted" style={{ fontSize: 12, margin: '4px 0 10px' }}>
+                      Gere um link de uso único (expira em 7 dias) para alguém entrar como membro.
+                    </p>
+                    {conviteLink ? (
+                      <div className="row" style={{ flexWrap: 'wrap' }}>
+                        <input
+                          className="input"
+                          readOnly
+                          value={conviteLink}
+                          onFocus={(e) => e.currentTarget.select()}
+                          style={{ flex: '1 1 200px', minWidth: 0 }}
+                        />
+                        <button type="button" className="btn btn-primary btn-sm" onClick={copiarConvite}>
+                          {copiado ? '✓ copiado' : 'Copiar'}
+                        </button>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={gerarConvite}>Gerar outro</button>
+                      </div>
+                    ) : (
+                      <button type="button" className="btn btn-accent btn-sm" onClick={gerarConvite}>Gerar link de convite</button>
+                    )}
                   </>
                 )}
               </div>

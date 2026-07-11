@@ -20,6 +20,7 @@ import {
   AddMembroDto,
   AlterarPapelDto,
   CreateOrganizacaoDto,
+  CriarConviteDto,
   DecidirVerificacaoDto,
   PedirVerificacaoDto,
 } from './dto/organizacoes.dto';
@@ -87,6 +88,31 @@ export class OrganizacoesController {
     @Body() dto: AlterarPapelDto,
   ) {
     return this.organizacoes.alterarPapel(id, user.id, userId, dto);
+  }
+
+  @Post('organizacoes/:id/convites')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Gerar link de convite (só DONO/ADMIN); retorna o token uma vez' })
+  criarConvite(
+    @Param('id') id: string,
+    @CurrentUser() user: UsuarioAutenticado,
+    @Body() dto: CriarConviteDto,
+  ) {
+    return this.organizacoes.criarConvite(id, user.id, dto);
+  }
+
+  @Get('organizacoes/convite/:token')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Prévia de um convite (org, papel, se expirou/usado)' })
+  previewConvite(@Param('token') token: string) {
+    return this.organizacoes.previewConvite(token);
+  }
+
+  @Post('organizacoes/convite/:token/aceitar')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Aceitar convite: entra na organização com o papel do convite' })
+  aceitarConvite(@Param('token') token: string, @CurrentUser() user: UsuarioAutenticado) {
+    return this.organizacoes.aceitarConvite(token, user.id);
   }
 
   @Post('organizacoes/:id/verificacao')
