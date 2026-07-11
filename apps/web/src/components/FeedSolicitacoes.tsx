@@ -121,6 +121,14 @@ export function FeedSolicitacoes() {
         <span className="cont-resultados">{total} resultado(s)</span>
       </div>
 
+      {q.trim() && (
+        <div style={{ marginTop: -10, marginBottom: 16 }}>
+          <Link href={`/busca?q=${encodeURIComponent(q)}`} className="muted" style={{ fontSize: 12.5 }}>
+            Ver também na comunidade →
+          </Link>
+        </div>
+      )}
+
       <div className="card">
         {carregando ? (
           <SkeletonList itens={5} />
