@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Insight } from '@/lib/types';
 import { Skeleton } from '@/components/Skeleton';
+import { ReportButton } from '@/components/ReportButton';
 
 export default function ComunidadePage() {
   const { usuario } = useAuth();
@@ -44,6 +45,11 @@ export default function ComunidadePage() {
   async function votar(id: string) {
     const r = await api<{ votou: boolean; total: number }>(`/insights/${id}/voto`, { method: 'POST' });
     setInsights((prev) => prev.map((i) => (i.id === id ? { ...i, votou: r.votou, _count: { ...(i._count ?? { votos: 0, comentarios: 0 }), votos: r.total } } : i)));
+  }
+
+  async function remover(id: string) {
+    await api(`/insights/${id}`, { method: 'DELETE' });
+    setInsights((prev) => prev.filter((i) => i.id !== id));
   }
 
   return (
@@ -134,6 +140,11 @@ export default function ComunidadePage() {
                 ▲ {i._count?.votos ?? 0} {i.votou ? 'votado' : 'votar'}
               </button>
               <Link href={`/comunidade/${i.id}`} className="btn btn-ghost btn-sm">💬 {i._count?.comentarios ?? 0} comentários</Link>
+              {usuario && usuario.id === i.autor.id ? (
+                <button className="btn btn-ghost btn-sm" onClick={() => remover(i.id)}>Remover</button>
+              ) : (
+                usuario && <ReportButton alvoTipo="INSIGHT" alvoId={i.id} />
+              )}
               <span className="muted" style={{ fontSize: 12, marginLeft: 'auto' }}>por {i.autor.nome}</span>
             </div>
           </div>

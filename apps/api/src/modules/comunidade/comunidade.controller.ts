@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -64,5 +65,25 @@ export class ComunidadeController {
     @Body() dto: CreateComentarioDto,
   ) {
     return this.comunidade.comentar(id, user.id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remover insight (só o autor)' })
+  removerInsight(@Param('id') id: string, @CurrentUser() user: UsuarioAutenticado) {
+    return this.comunidade.removerInsight(id, user.id);
+  }
+
+  @Delete(':id/comentarios/:comentarioId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remover comentário (só o autor)' })
+  removerComentario(
+    @Param('id') id: string,
+    @Param('comentarioId') comentarioId: string,
+    @CurrentUser() user: UsuarioAutenticado,
+  ) {
+    return this.comunidade.removerComentario(id, comentarioId, user.id);
   }
 }
