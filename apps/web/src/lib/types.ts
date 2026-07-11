@@ -99,6 +99,21 @@ export interface Organizacao {
   dono?: Usuario | null; // presente na listagem staff de verificações
 }
 
+export type SancaoTipo = 'ADVERTENCIA' | 'SUSPENSAO' | 'BANIMENTO';
+
+export interface Sancao {
+  id: string;
+  tipo: SancaoTipo;
+  motivo: string;
+  ativa: boolean;
+  expiraEm: string | null;
+  criadoEm: string;
+  usuarioId: string;
+  usuario: Usuario;
+  aplicadaPorId: string;
+  aplicadaPor: Usuario;
+}
+
 export interface Denuncia {
   id: string;
   alvoTipo: string;

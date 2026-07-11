@@ -20,6 +20,7 @@ import { PapeisGuard } from '../identidade/papeis.guard';
 import {
   AplicarSancaoDto,
   CreateDenunciaDto,
+  DesativarSancaoDto,
   ResolverDenunciaDto,
 } from './dto/moderacao.dto';
 import { ModeracaoService } from './moderacao.service';
@@ -75,6 +76,27 @@ export class ModeracaoController {
     @Req() req: Request,
   ) {
     return this.moderacao.aplicarSancao(user.id, dto, origem(req));
+  }
+
+  @Get('admin/sancoes')
+  @UseGuards(JwtAuthGuard, PapeisGuard)
+  @Papeis('MODERADOR', 'ADMIN')
+  @ApiOperation({ summary: 'Listar sanções aplicadas (moderação; filtro opcional por usuarioId)' })
+  listarSancoes(@Query('usuarioId') usuarioId?: string) {
+    return this.moderacao.listarSancoes(usuarioId);
+  }
+
+  @Patch('admin/sancoes/:id/desativar')
+  @UseGuards(JwtAuthGuard, PapeisGuard)
+  @Papeis('ADMIN')
+  @ApiOperation({ summary: 'Revogar (desativar) uma sanção' })
+  desativarSancao(
+    @Param('id') id: string,
+    @CurrentUser() user: UsuarioAutenticado,
+    @Body() dto: DesativarSancaoDto,
+    @Req() req: Request,
+  ) {
+    return this.moderacao.desativarSancao(id, user.id, dto.motivo, origem(req));
   }
 
   @Get('admin/metricas')
