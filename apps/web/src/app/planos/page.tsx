@@ -92,12 +92,12 @@ export default function PlanosPage() {
         {planos.map((p) => {
           const ativa = ativaDoPlano(p.id);
           return (
-            <div key={p.id} className="card card-pad" style={p.destaque ? { borderColor: 'var(--primary)', boxShadow: '0 0 0 1px var(--primary)' } : undefined}>
+            <div key={p.id} className="card card-pad" style={p.destaque ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : undefined}>
               <div className="between">
                 <strong style={{ fontSize: 17 }}>{p.nome}</strong>
-                {p.destaque && <span className="chip" style={{ color: 'var(--primary)' }}>popular</span>}
+                {p.destaque && <span className="chip" style={{ color: 'var(--accent)', borderColor: 'var(--accent-border)' }}>popular</span>}
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0' }}>{preco(p)}</div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em', margin: '8px 0' }}>{preco(p)}</div>
               <p className="muted" style={{ fontSize: 13, minHeight: 34 }}>{p.descricao}</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {p.recursos.filter(legivel).map((r) => (

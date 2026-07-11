@@ -16,7 +16,11 @@ export function ReputacaoBadge({ userId }: { userId: string }) {
   if (!rep || rep.total === 0) return <span className="chip">sem avaliações</span>;
 
   return (
-    <span className="chip" title={`Comunicação ${rep.media.comunicacao} · Qualidade ${rep.media.qualidade} · Prazo ${rep.media.prazo}`}>
+    <span
+      className="chip"
+      style={{ color: 'var(--ok)', borderColor: 'var(--ok-border)', gap: 5 }}
+      title={`Comunicação ${rep.media.comunicacao} · Qualidade ${rep.media.qualidade} · Prazo ${rep.media.prazo}`}
+    >
       ★ {rep.media.geral} · {rep.total} avaliação(ões)
     </span>
   );

@@ -992,3 +992,25 @@ padrão; clicar "design" ativa só ela e URL vira /?categoria=design#solicitacoe
 estados vazios/erro mantidos de propósito (aceitáveis).
 DEPLOY: commitado + push na main (100% web).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-10 — Sessão 23: varredura de QA/polish no tema novo
+------------------------------------------------------------------
+Usuário: "go". Auditoria das telas restantes no tema Alpha Control. Grep confirmou
+que só layout(meta)/offline(paleta nova)/error(tint vermelho) têm cor hardcoded —
+o resto flui por tokens, tema chega em tudo. NÃO fiz login (regra: não digitar senha
+p/ autenticar) — telas autenticadas revisadas por CÓDIGO; públicas conferidas no ar.
+Correções aplicadas:
+- Avaliar.tsx: estrela vazia var(--border) -> var(--text-faint) (sumia no dark).
+- ReputacaoBadge.tsx: pill de reputação agora verde (var(--ok)/ok-border) com ★,
+  como no protótipo (antes era chip neutro).
+- planos/page.tsx: plano em DESTAQUE agora realça em AZUL (var(--accent)) em vez de
+  branco (--primary); chip "popular" em accent; preço em Space Grotesk 700 (fidelidade).
+Telas conferidas por código e OK (tokens, estados vazio/erro/carregando): detalhe da
+solicitação (propostas+chat, fiel ao protótipo), login (tabs), planos. Demais telas
+(indicações, organizações, perfil, admin, admin/bi, comunidade, contratos, usuários)
+usam as mesmas classes/tokens; admin/bi e usuários usam gradiente primary->accent
+(ink->azul), OK no dark.
+VERIFICAÇÃO: next build VERDE (23 rotas). Planos conferido no ar em dark.
+DEPLOY: commitado + push na main (100% web).
+==================================================================

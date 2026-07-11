@@ -11,7 +11,7 @@ function Estrelas({ valor, onChange }: { valor: number; onChange: (n: number) =>
           key={n}
           type="button"
           onClick={() => onChange(n)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: n <= valor ? 'var(--warn)' : 'var(--border)', padding: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: n <= valor ? 'var(--warn)' : 'var(--text-faint)', padding: 0 }}
           aria-label={`${n} estrelas`}
         >
           ★
