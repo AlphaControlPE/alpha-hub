@@ -4,6 +4,24 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 
+// Gera um CNPJ com dígitos verificadores válidos a partir de uma base de 12
+// dígitos — assim cada execução usa um CNPJ único E válido (respeita o @unique).
+function cnpjValidoDe(base12: string): string {
+  const dig = (base: string): number => {
+    let pos = base.length - 7;
+    let soma = 0;
+    for (let i = 0; i < base.length; i++) {
+      soma += Number(base[i]) * pos;
+      pos = pos - 1 < 2 ? 9 : pos - 1;
+    }
+    const r = soma % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  const d1 = dig(base12);
+  const d2 = dig(base12 + d1);
+  return `${base12}${d1}${d2}`;
+}
+
 /**
  * Parte III — organizações, equipes e verificação:
  * criador vira DONO; adicionar membro por e-mail; papéis; pedir verificação
@@ -75,12 +93,21 @@ describe('Organizações & verificação (e2e)', () => {
     await request(http()).get(`/api/organizacoes/${orgId}`).set('Authorization', `Bearer ${estranho.token}`).expect(403);
   });
 
-  it('pede verificação (PENDENTE) exigindo CNPJ', async () => {
+  it('rejeita pedido sem CNPJ (400) e CNPJ inválido (400)', async () => {
     await request(http()).post(`/api/organizacoes/${orgId}/verificacao`).set('Authorization', `Bearer ${tDono}`)
       .send({}).expect(400); // sem CNPJ
+    // formato certo, dígitos verificadores errados (válido seria -81)
+    await request(http()).post(`/api/organizacoes/${orgId}/verificacao`).set('Authorization', `Bearer ${tDono}`)
+      .send({ documento: '11.222.333/0001-80' }).expect(400);
+  });
+
+  it('pede verificação com CNPJ válido (PENDENTE) e normaliza o formato', async () => {
+    const cnpj = cnpjValidoDe(String(stamp).padStart(12, '3').slice(-12)); // 14 dígitos, sem máscara
     const r = await request(http()).post(`/api/organizacoes/${orgId}/verificacao`).set('Authorization', `Bearer ${tDono}`)
-      .send({ documento: `12.345.678/0001-${stamp % 100}` }).expect(201);
+      .send({ documento: cnpj }).expect(201);
     expect(r.body.verificacaoStatus).toBe('PENDENTE');
+    // service normaliza para o padrão "00.000.000/0000-00"
+    expect(r.body.documento).toMatch(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/);
   });
 
   it('não-staff é barrado no painel de verificações (403)', async () => {

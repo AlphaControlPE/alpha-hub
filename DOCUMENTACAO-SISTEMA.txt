@@ -1039,3 +1039,34 @@ testar no ar sem login (guard roda antes do pipe -> 401), mas a lógica está co
 por unit test. Sem migration (schema não mudou) -> deploy da API é seguro.
 DEPLOY: commitado + push na main (API redeploya; confirmar /api/health no ar).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-11 — Sessão 25: e2e local restaurado + cobertura e2e do CNPJ
+------------------------------------------------------------------
+Usuário: "go". Objetivo: destravar verificação ponta a ponta (e2e) p/ features
+autenticadas. Dois achados/consertos:
+
+1) AMBIENTE E2E LOCAL ESTAVA QUEBRADO (pré-existente, NÃO afeta produção):
+   - node_modules em estado "hoisted" híbrido: @nestjs/common estava só na RAIZ
+     (órfã, package.json raiz SEM deps) e faltava em apps/api/node_modules; o
+     class-validator estava em apps/api. Em runtime o @nestjs/common da raiz não
+     enxergava o class-validator -> ValidationPipe do e2e falhava ("class-validator
+     package is missing"). É o "estado híbrido" que a doc alerta.
+   - CONSERTO (só local; prod instala limpo por app): subi o Postgres portátil
+     (scripts/pg-portable.ps1 start) e rodei `npm install` DENTRO de apps/api ->
+     node_modules auto-contido (agora tem @nestjs/common E class-validator juntos).
+   - Resultado: `npm run test:e2e` volta a rodar. Suíte completa 85/85 VERDE (11 specs).
+
+2) MEU COMMIT 980ec18 (validação de CNPJ) TINHA QUEBRADO UM TESTE E2E:
+   organizacoes.e2e-spec usava CNPJ FALSO (`12.345.678/0001-${stamp%100}`), que
+   agora é 400 (dígitos inválidos). A produção estava OK, mas a suíte ficou vermelha.
+   Corrigido + expandido:
+   - helper cnpjValidoDe(base12) gera CNPJ válido e ÚNICO por execução (respeita @unique).
+   - novos casos: pedido sem CNPJ -> 400; CNPJ com dígito errado ('11.222.333/0001-80')
+     -> 400; CNPJ válido -> 201 PENDENTE + documento NORMALIZADO ("00.000.000/0000-00").
+LIÇÃO: rodar o e2e ANTES de dar push em mudança de API (o unit test não pegou isso
+porque o guard/pipe não roda no unit). Ambiente e2e local agora funcional p/ próximas
+features autenticadas.
+VERIFICAÇÃO: e2e organizacoes 10/10; suíte completa 85/85 verde.
+DEPLOY: commit do teste (sem mudança de comportamento; API redeploya inócuo).
+==================================================================
