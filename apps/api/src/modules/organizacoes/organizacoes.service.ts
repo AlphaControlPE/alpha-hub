@@ -236,6 +236,41 @@ export class OrganizacoesService {
     return { token, papel, expiraEm };
   }
 
+  /** Lista os convites da org (só DONO/ADMIN), com status derivado. Sem o token. */
+  async listarConvites(orgId: string, userId: string) {
+    await this.exigirMembro(orgId, userId, ['DONO', 'ADMIN']);
+    const convites = await this.prisma.conviteOrganizacao.findMany({
+      where: { orgId },
+      include: { criadoPor: { select: { nome: true } } },
+      orderBy: { criadoEm: 'desc' },
+    });
+    const agora = new Date();
+    return convites.map((c) => ({
+      id: c.id,
+      papel: c.papel,
+      expiraEm: c.expiraEm,
+      criadoEm: c.criadoEm,
+      criadoPor: c.criadoPor.nome,
+      status: c.usadoEm ? 'USADO' : c.expiraEm < agora ? 'EXPIRADO' : 'ATIVO',
+    }));
+  }
+
+  /** Revoga (apaga) um convite da org (só DONO/ADMIN). Links pendentes deixam de valer. */
+  async revogarConvite(orgId: string, userId: string, conviteId: string) {
+    await this.exigirMembro(orgId, userId, ['DONO', 'ADMIN']);
+    const convite = await this.prisma.conviteOrganizacao.findUnique({ where: { id: conviteId } });
+    if (!convite || convite.orgId !== orgId) throw new NotFoundException('Convite não encontrado');
+    await this.prisma.conviteOrganizacao.delete({ where: { id: conviteId } });
+    await this.audit.registrar({
+      acao: 'organizacao.convite.revogado',
+      entidade: 'ConviteOrganizacao',
+      entidadeId: conviteId,
+      autorId: userId,
+      antes: { orgId, papel: convite.papel, usado: convite.usadoEm !== null },
+    });
+    return { revogado: true };
+  }
+
   /** Prévia pública (a quem tem o link): dados mínimos para a tela de aceite. */
   async previewConvite(token: string) {
     const convite = await this.prisma.conviteOrganizacao.findUnique({

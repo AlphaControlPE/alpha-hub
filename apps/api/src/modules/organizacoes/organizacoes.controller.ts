@@ -101,6 +101,24 @@ export class OrganizacoesController {
     return this.organizacoes.criarConvite(id, user.id, dto);
   }
 
+  @Get('organizacoes/:id/convites')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Listar convites da organização com status (só DONO/ADMIN)' })
+  listarConvites(@Param('id') id: string, @CurrentUser() user: UsuarioAutenticado) {
+    return this.organizacoes.listarConvites(id, user.id);
+  }
+
+  @Delete('organizacoes/:id/convites/:conviteId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Revogar um convite (só DONO/ADMIN)' })
+  revogarConvite(
+    @Param('id') id: string,
+    @Param('conviteId') conviteId: string,
+    @CurrentUser() user: UsuarioAutenticado,
+  ) {
+    return this.organizacoes.revogarConvite(id, user.id, conviteId);
+  }
+
   @Get('organizacoes/convite/:token')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Prévia de um convite (org, papel, se expirou/usado)' })

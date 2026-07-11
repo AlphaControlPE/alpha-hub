@@ -163,6 +163,24 @@ describe('Organizações & verificação (e2e)', () => {
     await request(http()).post(`/api/organizacoes/convite/${r.body.token}/aceitar`).set('Authorization', `Bearer ${tDono}`).expect(409);
   });
 
+  it('lista convites (gestor); não-gestor barrado (403)', async () => {
+    await request(http()).get(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tMembro}`).expect(403);
+    const r = await request(http()).get(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tDono}`).expect(200);
+    expect(Array.isArray(r.body)).toBe(true);
+    expect(r.body.length).toBeGreaterThan(0);
+    expect(['ATIVO', 'USADO', 'EXPIRADO']).toContain(r.body[0].status);
+  });
+
+  it('revoga convite ativo -> não pode mais ser aceito (404)', async () => {
+    const criado = await request(http()).post(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tDono}`).send({}).expect(201);
+    const lista = await request(http()).get(`/api/organizacoes/${orgId}/convites`).set('Authorization', `Bearer ${tDono}`).expect(200);
+    const ativo = lista.body.find((c: any) => c.status === 'ATIVO'); // ordem desc -> o recém-criado
+    expect(ativo).toBeTruthy();
+    await request(http()).delete(`/api/organizacoes/${orgId}/convites/${ativo.id}`).set('Authorization', `Bearer ${tDono}`).expect(200);
+    const alguem = await reg('revogado_alvo');
+    await request(http()).post(`/api/organizacoes/convite/${criado.body.token}/aceitar`).set('Authorization', `Bearer ${alguem.token}`).expect(404);
+  });
+
   it('remove membro (só gestor); dono é imutável', async () => {
     await request(http()).delete(`/api/organizacoes/${orgId}/membros/${membroId}`).set('Authorization', `Bearer ${tDono}`).expect(200);
   });

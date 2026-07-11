@@ -1098,3 +1098,21 @@ Página de aceite conferida no dev (estado deslogado, sem erro de console, dark)
 DEPLOY: commit + push na main. API redeploya e roda `prisma migrate deploy` (cria a
 tabela nova) — aditivo e seguro. Confirmar no ar: /api/health + Swagger com os endpoints.
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-11 — Sessão 27: listar + revogar convites de organização
+------------------------------------------------------------------
+Usuário: "go". Follow-up do convite por link: o gestor agora VÊ e REVOGA os links.
+- API (sem migration, tabela já existe):
+  * GET /organizacoes/:id/convites (DONO/ADMIN) -> lista com status derivado
+    (ATIVO/USADO/EXPIRADO), papel, validade, quem criou. NÃO expõe o token (só o
+    hash é guardado; o link cru é revelado 1x na criação).
+  * DELETE /organizacoes/:id/convites/:conviteId (DONO/ADMIN) -> revoga (apaga);
+    links pendentes deixam de valer. Audita.
+- Web (/organizacoes): lista de convites com pill de papel + badge de status e
+  botão "Revogar" nos ATIVOS; recarrega ao abrir a org e após gerar/revogar.
+- e2e (+2): lista (gestor)/403 não-gestor; revoga ativo -> aceite depois dá 404.
+VERIFICAÇÃO: nest build + next build VERDES. Suíte e2e COMPLETA 92/92 (organizacoes
+17/17). Reiniciei o Postgres portátil local (tinha parado no fim da sessão anterior).
+DEPLOY: commit + push na main (API endpoints novos + web; SEM migration).
+==================================================================

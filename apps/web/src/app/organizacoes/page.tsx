@@ -13,6 +13,16 @@ const badgeVerificacao: Record<string, string> = {
   REJEITADA: 'CANCELADA',
 };
 
+type ConviteResumo = {
+  id: string;
+  papel: string;
+  expiraEm: string;
+  criadoEm: string;
+  criadoPor: string;
+  status: 'ATIVO' | 'USADO' | 'EXPIRADO';
+};
+const badgeConvite: Record<string, string> = { ATIVO: 'ABERTA', USADO: 'ACEITA', EXPIRADO: 'CANCELADA' };
+
 export default function OrganizacoesPage() {
   const router = useRouter();
   const { usuario, carregando } = useAuth();
@@ -31,6 +41,7 @@ export default function OrganizacoesPage() {
   const [cnpjVerif, setCnpjVerif] = useState('');
   const [conviteLink, setConviteLink] = useState('');
   const [copiado, setCopiado] = useState(false);
+  const [convites, setConvites] = useState<ConviteResumo[]>([]);
 
   useEffect(() => {
     if (!carregando && !usuario) router.replace('/login');
@@ -43,11 +54,25 @@ export default function OrganizacoesPage() {
     if (usuario) carregar();
   }, [usuario, carregar]);
 
+  const carregarConvites = async (org: Organizacao) => {
+    if (org.meuPapel === 'DONO' || org.meuPapel === 'ADMIN') {
+      try {
+        setConvites(await api<ConviteResumo[]>(`/organizacoes/${org.id}/convites`));
+      } catch {
+        setConvites([]);
+      }
+    } else {
+      setConvites([]);
+    }
+  };
+
   const abrir = async (id: string) => {
     setErro('');
     setConviteLink('');
     setCopiado(false);
-    setAberta(await api<Organizacao>(`/organizacoes/${id}`));
+    const org = await api<Organizacao>(`/organizacoes/${id}`);
+    setAberta(org);
+    await carregarConvites(org);
   };
 
   async function criar(e: React.FormEvent) {
@@ -99,8 +124,20 @@ export default function OrganizacoesPage() {
     try {
       const r = await api<{ token: string }>(`/organizacoes/${aberta.id}/convites`, { method: 'POST', body: JSON.stringify({}) });
       setConviteLink(`${window.location.origin}/organizacoes/convite/${r.token}`);
+      await carregarConvites(aberta);
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Falha ao gerar convite');
+    }
+  }
+
+  async function revogarConvite(id: string) {
+    if (!aberta) return;
+    setErro('');
+    try {
+      await api(`/organizacoes/${aberta.id}/convites/${id}`, { method: 'DELETE' });
+      await carregarConvites(aberta);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Falha ao revogar convite');
     }
   }
 
@@ -258,6 +295,22 @@ export default function OrganizacoesPage() {
                       </div>
                     ) : (
                       <button type="button" className="btn btn-accent btn-sm" onClick={gerarConvite}>Gerar link de convite</button>
+                    )}
+
+                    {convites.length > 0 && (
+                      <div className="stack" style={{ marginTop: 12, gap: 8 }}>
+                        {convites.map((c) => (
+                          <div key={c.id} className="between" style={{ fontSize: 13 }}>
+                            <span className="row" style={{ gap: 6 }}>
+                              <span className="chip">{c.papel.toLowerCase()}</span>
+                              <span className={`badge ${badgeConvite[c.status]}`} style={{ fontSize: 10 }}>{c.status.toLowerCase()}</span>
+                            </span>
+                            {c.status === 'ATIVO' && (
+                              <button type="button" className="btn btn-ghost btn-sm" onClick={() => revogarConvite(c.id)}>Revogar</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </>
                 )}
