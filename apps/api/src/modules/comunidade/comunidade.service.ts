@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -88,5 +88,38 @@ export class ComunidadeService {
       data: { insightId, autorId, conteudo: dto.conteudo },
       include: { autor: autorPublico },
     });
+  }
+
+  /** Cascade no schema já remove votos e comentários junto com o insight. */
+  async removerInsight(id: string, userId: string) {
+    const insight = await this.prisma.insight.findUnique({ where: { id } });
+    if (!insight) throw new NotFoundException('Insight não encontrado');
+    if (insight.autorId !== userId) throw new ForbiddenException('Apenas o autor pode remover');
+    await this.prisma.insight.delete({ where: { id } });
+    await this.audit.registrar({
+      acao: 'insight.removido',
+      entidade: 'Insight',
+      entidadeId: id,
+      autorId: userId,
+      antes: { titulo: insight.titulo },
+    });
+    return { removido: true };
+  }
+
+  async removerComentario(insightId: string, comentarioId: string, userId: string) {
+    const comentario = await this.prisma.insightComentario.findUnique({ where: { id: comentarioId } });
+    if (!comentario || comentario.insightId !== insightId) {
+      throw new NotFoundException('Comentário não encontrado');
+    }
+    if (comentario.autorId !== userId) throw new ForbiddenException('Apenas o autor pode remover');
+    await this.prisma.insightComentario.delete({ where: { id: comentarioId } });
+    await this.audit.registrar({
+      acao: 'insight.comentario.removido',
+      entidade: 'InsightComentario',
+      entidadeId: comentarioId,
+      autorId: userId,
+      antes: { conteudo: comentario.conteudo },
+    });
+    return { removido: true };
   }
 }
