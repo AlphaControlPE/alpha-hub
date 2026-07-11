@@ -1014,3 +1014,28 @@ usam as mesmas classes/tokens; admin/bi e usuários usam gradiente primary->acce
 VERIFICAÇÃO: next build VERDE (23 rotas). Planos conferido no ar em dark.
 DEPLOY: commitado + push na main (100% web).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-11 — Sessão 24: validação real de CNPJ (Parte III, 03.08)
+------------------------------------------------------------------
+Usuário: "go" (feature concreta do escopo). Escolhida a verificação avançada de
+identidade/empresa. O fluxo de verificação de organização JÁ existia ponta a ponta
+(pedir -> staff aprova/rejeita -> selo + notificação + auditoria, front + back +
+admin). O GAP: o CNPJ só era validado por TAMANHO (14-18 chars) — um número no
+formato certo mas FALSO (dígitos verificadores errados) passava e entrava na fila.
+MUDANÇA (backend, primeira alteração de API desde o reskin):
+- NOVO common/validacao/cnpj.ts: cnpjValido() (valida os 2 dígitos verificadores +
+  rejeita sequências repetidas), normalizarCnpj(), formatarCnpj(), e o decorator
+  class-validator @ECnpj().
+- DTOs (organizacoes): documento agora usa @ECnpj() no lugar de @MinLength/@MaxLength
+  (CreateOrganizacaoDto e PedirVerificacaoDto).
+- Service: CNPJ normalizado p/ o formato canônico "11.222.333/0001-81" antes de
+  gravar (criar + pedirVerificacao) -> o índice @unique do documento passa a ser
+  consistente (mascarado e sem máscara viram o mesmo valor).
+- NOVO cnpj.spec.ts (6 casos): válido c/ e sem máscara, dígito errado, sequência
+  repetida, tamanho/lixo, normalização, formatação.
+VERIFICAÇÃO: nest build exit 0; jest unit VERDE (2 suites, 9 testes). Não dá p/
+testar no ar sem login (guard roda antes do pipe -> 401), mas a lógica está coberta
+por unit test. Sem migration (schema não mudou) -> deploy da API é seguro.
+DEPLOY: commitado + push na main (API redeploya; confirmar /api/health no ar).
+==================================================================

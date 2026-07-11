@@ -7,6 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { ECnpj } from '../../../common/validacao/cnpj';
 
 // Papéis atribuíveis por convite/gestão. DONO só existe na criação da org.
 export type PapelAtribuivel = 'MEMBRO' | 'ADMIN';
@@ -25,11 +26,10 @@ export class CreateOrganizacaoDto {
   @MaxLength(2000)
   descricao?: string;
 
-  @ApiPropertyOptional({ example: '12.345.678/0001-90', description: 'CNPJ da organização' })
+  @ApiPropertyOptional({ example: '11.222.333/0001-81', description: 'CNPJ da organização (validado)' })
   @IsOptional()
   @IsString()
-  @MinLength(14)
-  @MaxLength(18)
+  @ECnpj()
   documento?: string;
 }
 
@@ -52,13 +52,12 @@ export class AlterarPapelDto {
 
 export class PedirVerificacaoDto {
   @ApiPropertyOptional({
-    example: '12.345.678/0001-90',
-    description: 'CNPJ — obrigatório se a organização ainda não tiver documento',
+    example: '11.222.333/0001-81',
+    description: 'CNPJ (validado) — obrigatório se a organização ainda não tiver documento',
   })
   @IsOptional()
   @IsString()
-  @MinLength(14)
-  @MaxLength(18)
+  @ECnpj()
   documento?: string;
 }
 

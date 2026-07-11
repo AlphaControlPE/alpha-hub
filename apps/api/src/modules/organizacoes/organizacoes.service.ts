@@ -9,6 +9,7 @@ import { PapelMembro, Prisma } from '@prisma/client';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificacoesService } from '../notificacoes/notificacoes.service';
+import { formatarCnpj } from '../../common/validacao/cnpj';
 import {
   AddMembroDto,
   AlterarPapelDto,
@@ -58,7 +59,7 @@ export class OrganizacoesService {
         data: {
           nome: dto.nome,
           descricao: dto.descricao ?? null,
-          documento: dto.documento ?? null,
+          documento: dto.documento ? formatarCnpj(dto.documento) : null,
           membros: { create: { userId, papel: 'DONO' } },
         },
       });
@@ -212,7 +213,7 @@ export class OrganizacoesService {
     if (org.verificacaoStatus === 'PENDENTE') {
       throw new ConflictException('Já existe um pedido de verificação em análise');
     }
-    const documento = dto.documento ?? org.documento;
+    const documento = dto.documento ? formatarCnpj(dto.documento) : org.documento;
     if (!documento) {
       throw new BadRequestException('Informe o CNPJ (documento) para pedir verificação');
     }
