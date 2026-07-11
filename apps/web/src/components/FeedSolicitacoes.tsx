@@ -19,6 +19,7 @@ export function FeedSolicitacoes() {
   const [q, setQ] = useState('');
   const [categoria, setCategoria] = useState('');
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
   const [recomendadas, setRecomendadas] = useState<(Solicitacao & { motivos: string[] })[]>([]);
 
   // Busca deep-linkável: semeia estado a partir de ?q=/?categoria= ao montar.
@@ -32,6 +33,7 @@ export function FeedSolicitacoes() {
 
   const carregar = useCallback(async () => {
     setCarregando(true);
+    setErro(false);
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (categoria) params.set('categoria', categoria);
@@ -42,6 +44,9 @@ export function FeedSolicitacoes() {
       const r = await api<Paginated<Solicitacao>>(`/solicitacoes?${qs}`);
       setDados(r.dados);
       setTotal(r.meta.total);
+    } catch {
+      // Rede/API indisponível: mostra estado de erro com opção de tentar de novo.
+      setErro(true);
     } finally {
       setCarregando(false);
     }
@@ -99,6 +104,15 @@ export function FeedSolicitacoes() {
       <div className="card">
         {carregando ? (
           <SkeletonList itens={5} />
+        ) : erro ? (
+          <div className="empty">
+            <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>⚠️</div>
+            <strong>Não foi possível carregar as solicitações</strong>
+            <p className="muted" style={{ margin: '6px 0 14px', fontSize: 14 }}>
+              Verifique sua conexão e tente novamente.
+            </p>
+            <button className="btn btn-primary btn-sm" onClick={carregar}>Tentar de novo</button>
+          </div>
         ) : dados.length === 0 ? (
           <div className="empty">
             <div aria-hidden="true" style={{ fontSize: 34, marginBottom: 8 }}>🔎</div>

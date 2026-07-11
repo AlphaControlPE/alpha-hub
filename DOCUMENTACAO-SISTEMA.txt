@@ -951,3 +951,23 @@ PENDÊNCIAS QUE SÓ O USUÁRIO FAZ (não são código; dei os passos):
 - GitHub secret DATABASE_URL (liga backup) + rodar o Action 1x.
 - URGENTE ~fim de julho: expiração do Postgres grátis do Render (upgrade OU Neon).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-10 — Sessão 21: nav responsiva + robustez do feed (continuar projeto)
+------------------------------------------------------------------
+Usuário: "continue o projeto" (domínio fica p/ depois). Dois ganhos de baixo risco
+sobre o layout recém-lançado:
+- NAV RESPONSIVA: com muitos links + toggle + sino, a barra ficava apertada no
+  celular. Nav.tsx agora tem menu colapsável — abaixo de 860px os links + ações
+  viram um dropdown full-width via botão hambúrguer (ícone ☰/✕); brand + toggle
+  ficam sempre visíveis. CSS: .nav-collapse/.nav-hamburger/.nav-chip-hide +
+  media query (max-width:860px) em globals.css. Fecha o menu ao clicar em link.
+- ROBUSTEZ DO FEED: FeedSolicitacoes buscava /solicitacoes sem catch — se a API
+  caía, virava unhandled rejection (o "1 error" do overlay). Agora tem try/catch
+  + estado de erro ("Não foi possível carregar… / Tentar de novo") que rechama carregar().
+VERIFICAÇÃO (dev :3007): next build VERDE (23 rotas; / = 4.33kB). Desktop (1280):
+hambúrguer escondido, links inline. Mobile (375): hambúrguer visível, links
+colapsam, clique abre dropdown full-width ancorado abaixo do header (links
+empilhados). Feed com API local fora agora mostra o estado de erro (sem rejeito).
+DEPLOY: commitado + push na main (mudanças 100% web).
+==================================================================

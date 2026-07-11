@@ -176,6 +176,28 @@ a:hover { color: var(--text); }
 .nav a.navlink { color: var(--text-dim); font-weight: 500; font-size: 13.5px; padding: 7px 10px; border-radius: 8px; white-space: nowrap; }
 .nav a.navlink:hover { color: var(--text); background: var(--surface-2); }
 
+/* Colapso responsivo: links + ações viram menu (hambúrguer) abaixo de 860px */
+.nav-collapse { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nav-hamburger {
+  display: none; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--border);
+  background: transparent; color: var(--text); place-items: center; cursor: pointer; flex: none;
+}
+.nav-hamburger:hover { background: var(--surface-2); }
+@media (max-width: 860px) {
+  .nav-hamburger { display: grid; }
+  .nav-chip-hide { display: none; }
+  .nav-collapse {
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column; align-items: stretch; gap: 6px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px clamp(16px, 3vw, 24px) 14px;
+  }
+  .nav-collapse.aberto { display: flex; }
+  .nav-collapse .navlink { padding: 11px 8px; font-size: 15px; }
+  .nav-collapse .btn { width: 100%; }
+  .nav-collapse .row { justify-content: space-between; margin-left: 0 !important; }
+}
+
 /* Theme toggle */
 .theme-toggle {
   width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--border);
