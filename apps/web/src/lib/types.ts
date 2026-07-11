@@ -268,3 +268,9 @@ export interface Paginated<T> {
   dados: T[];
   meta: { page: number; limit: number; total: number; totalPaginas: number };
 }
+
+// Busca global (GET /api/busca?q=), retorna solicitações e insights juntos.
+export interface ResultadoBusca {
+  solicitacoes: Solicitacao[];
+  insights: Insight[];
+}
