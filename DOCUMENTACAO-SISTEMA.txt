@@ -1116,3 +1116,25 @@ VERIFICAÇÃO: nest build + next build VERDES. Suíte e2e COMPLETA 92/92 (organi
 17/17). Reiniciei o Postgres portátil local (tinha parado no fim da sessão anterior).
 DEPLOY: commit + push na main (API endpoints novos + web; SEM migration).
 ==================================================================
+
+------------------------------------------------------------------
+2026-07-11 — Sessão 28: edição de perfil (nome + bio "sobre você")
+------------------------------------------------------------------
+Usuário: "go". GAP achado: o campo User.bio é EXIBIDO no perfil público, mas não
+havia endpoint nem UI para o usuário DEFINIR/editar a própria bio/nome (register
+aceita bio, mas o form de cadastro nunca envia) -> toda bio ficava vazia p/ sempre.
+- API (módulo perfil; sem migration, colunas já existem):
+  * GET /perfil/me agora também retorna nome e bio (além de portfólio/serviços).
+  * PATCH /perfil/me (NOVO): atualiza nome (2-120) e/ou bio (<=600). Bio só com
+    espaços -> limpa (null). Trim. Audita antes/depois. (JWT valida contra o banco,
+    então nome novo reflete na hora; nome não vive no token.)
+- Web:
+  * lib/auth.tsx: novo atualizarUsuario(parcial) -> atualiza o nome no nav sem reload.
+  * /perfil: card "Sobre você" (nome público + bio com contador 0/600 + Salvar);
+    popula do GET /perfil/me; ao salvar, PATCH + atualiza estado e o nome do nav.
+- e2e (perfil +3): atualiza nome/bio -> reflete no público; bio em branco -> null;
+  validação (nome curto/bio longa -> 400) + exige login (401).
+VERIFICAÇÃO: nest build + next build VERDES. Suíte e2e COMPLETA 95/95 (perfil 10/10).
+UI de edição fica atrás de login (não testável no ar sem logar), mas coberta por e2e.
+DEPLOY: commit + push na main (API + web; SEM migration).
+==================================================================

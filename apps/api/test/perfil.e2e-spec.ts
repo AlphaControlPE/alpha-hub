@@ -91,4 +91,26 @@ describe('Perfil & Portfólio (e2e)', () => {
     await request(http()).post('/api/perfil/portfolio').set('Authorization', `Bearer ${token}`)
       .send({ titulo: 'ab', descricao: 'curta demais' }).expect(400);
   });
+
+  it('atualiza nome e bio; reflete no perfil público', async () => {
+    const r = await request(http()).patch('/api/perfil/me').set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Dono Editado', bio: 'Especialista em sites rápidos.' }).expect(200);
+    expect(r.body.nome).toBe('Dono Editado');
+    expect(r.body.bio).toBe('Especialista em sites rápidos.');
+    const pub = await request(http()).get(`/api/usuarios/${userId}/perfil`).expect(200);
+    expect(pub.body.nome).toBe('Dono Editado');
+    expect(pub.body.bio).toBe('Especialista em sites rápidos.');
+  });
+
+  it('bio só com espaços limpa o campo (null)', async () => {
+    const r = await request(http()).patch('/api/perfil/me').set('Authorization', `Bearer ${token}`)
+      .send({ bio: '   ' }).expect(200);
+    expect(r.body.bio).toBeNull();
+  });
+
+  it('valida edição (nome curto/bio longa -> 400) e exige login (401)', async () => {
+    await request(http()).patch('/api/perfil/me').set('Authorization', `Bearer ${token}`).send({ nome: 'a' }).expect(400);
+    await request(http()).patch('/api/perfil/me').set('Authorization', `Bearer ${token}`).send({ bio: 'x'.repeat(601) }).expect(400);
+    await request(http()).patch('/api/perfil/me').send({ nome: 'Sem Token' }).expect(401);
+  });
 });

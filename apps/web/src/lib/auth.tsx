@@ -9,6 +9,7 @@ interface AuthState {
   carregando: boolean;
   entrar: (email: string, senha: string) => Promise<void>;
   registrar: (nome: string, email: string, senha: string) => Promise<void>;
+  atualizarUsuario: (dados: Partial<Usuario>) => void;
   sair: () => void;
 }
 
@@ -53,13 +54,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(r.usuario);
   }
 
+  function atualizarUsuario(dados: Partial<Usuario>) {
+    setUsuario((u) => (u ? { ...u, ...dados } : u));
+  }
+
   function sair() {
     setToken(null);
     setUsuario(null);
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, carregando, entrar, registrar, sair }}>
+    <AuthContext.Provider value={{ usuario, carregando, entrar, registrar, atualizarUsuario, sair }}>
       {children}
     </AuthContext.Provider>
   );

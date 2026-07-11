@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { CreateServicoDto } from './dto/create-servico.dto';
 
@@ -36,13 +37,46 @@ export class PerfilService {
     return user;
   }
 
-  /** Portfólio + serviços do próprio usuário (para edição). */
+  /** Nome, bio, portfólio e serviços do próprio usuário (para edição). */
   async meuPerfil(userId: string) {
-    const [portfolio, servicos] = await Promise.all([
+    const [user, portfolio, servicos] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, select: { nome: true, bio: true } }),
       this.prisma.portfolioItem.findMany({ where: { userId }, ...maisRecentes }),
       this.prisma.servicoOferecido.findMany({ where: { userId }, ...maisRecentes }),
     ]);
-    return { portfolio, servicos };
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return { nome: user.nome, bio: user.bio, portfolio, servicos };
+  }
+
+  /** Atualiza nome e/ou "sobre você" (bio) do próprio usuário; audita antes/depois. */
+  async atualizarPerfil(userId: string, dto: AtualizarPerfilDto) {
+    const atual = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { nome: true, bio: true },
+    });
+    if (!atual) throw new NotFoundException('Usuário não encontrado');
+
+    const data: { nome?: string; bio?: string | null } = {};
+    if (dto.nome !== undefined) data.nome = dto.nome.trim();
+    if (dto.bio !== undefined) {
+      const bio = dto.bio.trim();
+      data.bio = bio.length > 0 ? bio : null;
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { id: true, nome: true, bio: true, verificado: true },
+    });
+    await this.audit.registrar({
+      acao: 'perfil.atualizado',
+      entidade: 'User',
+      entidadeId: userId,
+      autorId: userId,
+      antes: { nome: atual.nome, bio: atual.bio },
+      depois: { nome: user.nome, bio: user.bio },
+    });
+    return user;
   }
 
   async adicionarPortfolio(userId: string, dto: CreatePortfolioDto) {

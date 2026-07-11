@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../identidade/current-user.decorator';
 import { JwtAuthGuard } from '../identidade/jwt-auth.guard';
 import { UsuarioAutenticado } from '../identidade/jwt.strategy';
+import { AtualizarPerfilDto } from './dto/atualizar-perfil.dto';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { CreateServicoDto } from './dto/create-servico.dto';
 import { PerfilService } from './perfil.service';
@@ -21,9 +22,17 @@ export class PerfilController {
   @Get('perfil/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Meu portfólio e catálogo de serviços (para edição)' })
+  @ApiOperation({ summary: 'Meu perfil: nome, bio, portfólio e serviços (para edição)' })
   meuPerfil(@CurrentUser() user: UsuarioAutenticado) {
     return this.perfil.meuPerfil(user.id);
+  }
+
+  @Patch('perfil/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar meu nome e/ou "sobre você" (bio)' })
+  atualizarPerfil(@CurrentUser() user: UsuarioAutenticado, @Body() dto: AtualizarPerfilDto) {
+    return this.perfil.atualizarPerfil(user.id, dto);
   }
 
   @Post('perfil/portfolio')

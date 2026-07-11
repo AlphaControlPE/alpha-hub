@@ -8,15 +8,23 @@ import { useAuth } from '@/lib/auth';
 import { PortfolioItem, ServicoOferecido } from '@/lib/types';
 
 interface MeuPerfil {
+  nome: string;
+  bio: string | null;
   portfolio: PortfolioItem[];
   servicos: ServicoOferecido[];
 }
 
 export default function MeuPerfilPage() {
   const router = useRouter();
-  const { usuario, carregando } = useAuth();
-  const [dados, setDados] = useState<MeuPerfil>({ portfolio: [], servicos: [] });
+  const { usuario, carregando, atualizarUsuario } = useAuth();
+  const [dados, setDados] = useState<MeuPerfil>({ nome: '', bio: null, portfolio: [], servicos: [] });
   const [erro, setErro] = useState('');
+
+  // "Sobre você" (nome + bio)
+  const [nome, setNome] = useState('');
+  const [bio, setBio] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(false);
 
   // formulário de portfólio
   const [pTitulo, setPTitulo] = useState('');
@@ -33,11 +41,35 @@ export default function MeuPerfilPage() {
   }, [carregando, usuario, router]);
 
   const carregar = useCallback(async () => {
-    setDados(await api<MeuPerfil>('/perfil/me'));
+    const r = await api<MeuPerfil>('/perfil/me');
+    setDados(r);
+    setNome(r.nome);
+    setBio(r.bio ?? '');
   }, []);
   useEffect(() => {
     if (usuario) carregar();
   }, [usuario, carregar]);
+
+  async function salvarSobre(e: React.FormEvent) {
+    e.preventDefault();
+    setErro('');
+    setSalvo(false);
+    setSalvando(true);
+    try {
+      const r = await api<{ nome: string; bio: string | null }>('/perfil/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ nome, bio }),
+      });
+      setDados((d) => ({ ...d, nome: r.nome, bio: r.bio }));
+      atualizarUsuario({ nome: r.nome });
+      setSalvo(true);
+      setTimeout(() => setSalvo(false), 2500);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Falha ao salvar');
+    } finally {
+      setSalvando(false);
+    }
+  }
 
   async function addPortfolio(e: React.FormEvent) {
     e.preventDefault();
@@ -85,6 +117,31 @@ export default function MeuPerfilPage() {
       </p>
 
       {erro && <p className="error" style={{ marginBottom: 12 }}>{erro}</p>}
+
+      {/* Sobre você */}
+      <h2 className="h2">Sobre você</h2>
+      <form className="card card-pad" style={{ marginBottom: 24 }} onSubmit={salvarSobre}>
+        <label className="field">
+          <span className="lbl">Nome público</span>
+          <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} minLength={2} maxLength={120} required />
+        </label>
+        <label className="field">
+          <span className="lbl">Bio (aparece no seu perfil público)</span>
+          <textarea
+            className="textarea"
+            style={{ minHeight: 80 }}
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            maxLength={600}
+            placeholder="Conte em poucas linhas o que você faz e sua experiência."
+          />
+          <span className="muted" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>{bio.length}/600</span>
+        </label>
+        <div className="row">
+          <button className="btn btn-primary" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
+          {salvo && <span className="success" style={{ fontSize: 13 }}>✓ salvo</span>}
+        </div>
+      </form>
 
       {/* Portfólio */}
       <h2 className="h2">Portfólio</h2>
